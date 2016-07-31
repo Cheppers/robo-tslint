@@ -1,0 +1,21 @@
+{
+  "private": true,
+  "name": "robo-tslint-tester",
+  "version": "0.0.1",
+  "description": "Accepatance test helper for robo-tslint",
+  "main": "index.js",
+  "author": "",
+  "license": "GPL-2.0+",
+  "repository": {
+    "type": "git",
+    "url": "/dev/null"
+  },
+  "devDependencies": {
+    "tslint": "^3.14.0",
+    "tslint-formatters": "^0.1.3",
+    "typescript": "^1.8.10"
+  },
+  "scripts": {
+    "test": "true"
+  }
+}

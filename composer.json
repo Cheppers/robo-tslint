@@ -1,0 +1,39 @@
+{
+    "name": "cheppers/robo-tslint",
+    "description": "Robo task wrapper for tslint",
+    "license": "GPL-2.0+",
+    "version": "0.0.1",
+    "config": {
+        "bin-dir": "bin"
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true,
+    "require": {
+        "cheppers/asset-jar": "^0.0",
+        "consolidation/robo": "dev-master#628f807dc6e321ba858cadc00eecc6a40a99efa9"
+    },
+    "require-dev": {
+        "cheppers/git-hooks": "^0.0.8",
+        "codeception/codeception": "^2.2",
+        "satooshi/php-coveralls": "^1.0",
+        "squizlabs/php_codesniffer": "2.6.2",
+        "symfony/process": "^3.1"
+    },
+    "autoload": {
+        "psr-4": {
+            "Cheppers\\Robo\\Task\\TsLint\\": "src/"
+        }
+    },
+    "scripts": {
+        "post-install-cmd": [
+            "@deploy-git-hooks",
+            "@npm-install"
+        ],
+        "post-update-cmd": [
+            "@deploy-git-hooks",
+            "@npm-install"
+        ],
+        "deploy-git-hooks": "\\Cheppers\\GitHooks\\Main::deploy",
+        "npm-install": "cd tests/_data && npm install"
+    }
+}
