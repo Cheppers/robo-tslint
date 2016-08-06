@@ -18,7 +18,6 @@ before_install:
   - 'which phpdbg && phpenv config-rm xdebug.ini || true'
 
 install:
-  - 'npm install'
   - 'composer install'
 
 script:
