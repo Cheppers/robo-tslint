@@ -5,7 +5,6 @@ namespace Cheppers\Robo\Task\TsLint;
 use Cheppers\AssetJar\AssetJarAware;
 use Cheppers\AssetJar\AssetJarAwareInterface;
 use Robo\Common\IO;
-use Robo\Common\Timer;
 use Robo\Result;
 use Robo\Task\BaseTask;
 use Symfony\Component\Process\Process;

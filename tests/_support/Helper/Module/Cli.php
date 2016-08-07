@@ -45,7 +45,9 @@ class Cli extends CodeceptionModule
     public function runShellCommand($command)
     {
         $this->process = new Process($command);
-        $this->process->run();
+        $this->exitCode = $this->process->run();
+        $this->stdOutput = $this->process->getOutput();
+        $this->stdError = $this->process->getErrorOutput();
 
         return $this;
     }
@@ -55,10 +57,6 @@ class Cli extends CodeceptionModule
      */
     public function getExitCode()
     {
-        if ($this->exitCode === null) {
-            $this->exitCode = $this->process->getExitCode();
-        }
-
         return $this->exitCode;
     }
 
@@ -67,10 +65,6 @@ class Cli extends CodeceptionModule
      */
     public function getStdOutput()
     {
-        if ($this->stdOutput === null) {
-            $this->stdOutput = $this->process->getOutput();
-        }
-
         return $this->stdOutput;
     }
 
@@ -79,10 +73,6 @@ class Cli extends CodeceptionModule
      */
     public function getStdError()
     {
-        if ($this->stdError === null) {
-            $this->stdError = $this->process->getErrorOutput();
-        }
-
         return $this->stdError;
     }
 }
