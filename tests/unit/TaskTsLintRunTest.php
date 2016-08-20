@@ -2,6 +2,7 @@
 
 use Cheppers\Robo\Task\TsLint\TaskTsLintRun;
 use Codeception\Util\Stub;
+use Robo\Robo;
 
 /**
  * Class TaskTsLintRunTest.
@@ -24,7 +25,7 @@ class TaskTsLintRunTest extends \Codeception\Test\Unit
     {
         // @codingStandardsIgnoreEnd
         $this->container = new \League\Container\Container();
-        \Robo\Robo::setContainer($this->container);
+        Robo::setContainer($this->container);
         \Robo\Runner::configureContainer($this->container, null, new \Helper\Dummy\Output());
         $this->container->addServiceProvider(Cheppers\Robo\Task\TsLint\LoadTasks::getTsLintServiceProvider());
     }
@@ -352,6 +353,7 @@ class TaskTsLintRunTest extends \Codeception\Test\Unit
         \Helper\Dummy\Process::$exitCode = $exit_code;
         \Helper\Dummy\Process::$stdOutput = $with_jar ? json_encode($std_output) : $std_output;
 
+        $task->setConfig(Robo::config());
         $task->setLogger($this->container->get('logger'));
         $asset_jar = null;
         if ($with_jar) {
@@ -399,6 +401,7 @@ class TaskTsLintRunTest extends \Codeception\Test\Unit
         \Helper\Dummy\Process::$exitCode = $exit_code;
         \Helper\Dummy\Process::$stdOutput = $std_output;
 
+        $task->setConfig(Robo::config());
         $task->setLogger($this->container->get('logger'));
         $asset_jar = new \Cheppers\AssetJar\AssetJar();
         $task->setAssetJar($asset_jar);
