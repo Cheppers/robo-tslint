@@ -1,6 +1,6 @@
 <?php
 
-use Cheppers\Robo\Task\TsLint\TaskTsLintRun;
+use Cheppers\Robo\TsLint\Task\TaskTsLintRun;
 use Codeception\Util\Stub;
 use Robo\Robo;
 
@@ -12,7 +12,7 @@ class TaskTsLintRunTest extends \Codeception\Test\Unit
 {
     // @codingStandardsIgnoreEnd
 
-    use Cheppers\Robo\Task\TsLint\LoadTasks;
+    use Cheppers\Robo\TsLint\Task\LoadTasks;
     use \Robo\TaskAccessor;
 
     /**
@@ -27,7 +27,7 @@ class TaskTsLintRunTest extends \Codeception\Test\Unit
         $this->container = new \League\Container\Container();
         Robo::setContainer($this->container);
         \Robo\Runner::configureContainer($this->container, null, new \Helper\Dummy\Output());
-        $this->container->addServiceProvider(Cheppers\Robo\Task\TsLint\LoadTasks::getTsLintServiceProvider());
+        $this->container->addServiceProvider(Cheppers\Robo\TsLint\Task\LoadTasks::getTsLintServiceProvider());
     }
 
     /**

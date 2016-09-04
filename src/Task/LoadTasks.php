@@ -1,13 +1,13 @@
 <?php
 
-namespace Cheppers\Robo\Task\TsLint;
+namespace Cheppers\Robo\TsLint\Task;
 
 use Robo\Container\SimpleServiceProvider;
 
 /**
  * Class LoadTasks.
  *
- * @package Cheppers\Robo\Task\TsLint
+ * @package Cheppers\Robo\TsLint\Task
  */
 trait LoadTasks
 {
@@ -30,7 +30,7 @@ trait LoadTasks
      * @param string[] $paths
      *   File paths.
      *
-     * @return \Cheppers\Robo\Task\TsLint\TaskTsLintRun
+     * @return \Cheppers\Robo\TsLint\Task\TaskTsLintRun
      *   A lint runner task instance.
      */
     protected function taskTsLintRun(array $options = [], array $paths = [])

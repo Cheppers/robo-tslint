@@ -1,6 +1,6 @@
 <?php
 
-namespace Cheppers\Robo\Task\TsLint;
+namespace Cheppers\Robo\TsLint\Task;
 
 use Cheppers\AssetJar\AssetJarAware;
 use Cheppers\AssetJar\AssetJarAwareInterface;
@@ -15,7 +15,7 @@ use Symfony\Component\Process\Process;
  * Assert mapping:
  *   - report: Parsed JSON lint report.
  *
- * @package Cheppers\Robo\Task\TsLint
+ * @package Cheppers\Robo\TsLint\Task
  */
 class TaskTsLintRun extends BaseTask implements AssetJarAwareInterface
 {

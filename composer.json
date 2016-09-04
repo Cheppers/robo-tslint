@@ -19,7 +19,7 @@
     },
     "autoload": {
         "psr-4": {
-            "Cheppers\\Robo\\Task\\TsLint\\": "src/"
+            "Cheppers\\Robo\\TsLint\\": "src/"
         }
     },
     "scripts": {

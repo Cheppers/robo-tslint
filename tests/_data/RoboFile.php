@@ -6,7 +6,7 @@
 class RoboFile extends \Robo\Tasks
     // @codingStandardsIgnoreEnd
 {
-    use \Cheppers\Robo\Task\TsLint\LoadTasks;
+    use \Cheppers\Robo\TsLint\Task\LoadTasks;
 
     /**
      * RoboFile constructor.
@@ -23,7 +23,7 @@ class RoboFile extends \Robo\Tasks
     }
 
     /**
-     * @return \Cheppers\Robo\Task\TsLint\TaskTsLintRun
+     * @return \Cheppers\Robo\TsLint\Task\TaskTsLintRun
      */
     public function lintVerbose()
     {
@@ -34,7 +34,7 @@ class RoboFile extends \Robo\Tasks
     }
 
     /**
-     * @return \Cheppers\Robo\Task\TsLint\TaskTsLintRun
+     * @return \Cheppers\Robo\TsLint\Task\TaskTsLintRun
      */
     public function lintWithJar()
     {
