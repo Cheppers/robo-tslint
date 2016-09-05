@@ -4,8 +4,8 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "hash": "48f0bbe180d02a1e38bda3cb8ee54fd2",
-    "content-hash": "caa5cab482f6c7c0493b1d70394d5bc9",
+    "hash": "e923f5a7cb3779593200d776fc3f6598",
+    "content-hash": "3abe6d1f1af8a786143d24d26f58f140",
     "packages": [
         {
             "name": "cheppers/asset-jar",
@@ -1011,6 +1011,41 @@
             ],
             "description": "Provide a bridge between Git hooks and scripts under VCS.",
             "time": "2016-07-10 07:41:08"
+        },
+        {
+            "name": "cheppers/robo-phpcs",
+            "version": "v0.0.4",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/Cheppers/robo-phpcs.git",
+                "reference": "5b6ee2c22eb41247968cb82d05cb44fa73bcc901"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/Cheppers/robo-phpcs/zipball/5b6ee2c22eb41247968cb82d05cb44fa73bcc901",
+                "reference": "5b6ee2c22eb41247968cb82d05cb44fa73bcc901",
+                "shasum": ""
+            },
+            "require": {
+                "consolidation/robo": "1.0.0-RC2",
+                "squizlabs/php_codesniffer": "^2.6"
+            },
+            "require-dev": {
+                "cheppers/git-hooks": "^0.0.8",
+                "codeception/codeception": "^2.2"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Cheppers\\Robo\\Phpcs\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "GPL-2.0+"
+            ],
+            "description": "Robo task wrapper for PHPCS",
+            "time": "2016-09-03 21:22:10"
         },
         {
             "name": "codeception/codeception",

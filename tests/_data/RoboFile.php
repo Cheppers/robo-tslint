@@ -41,5 +41,4 @@ class RoboFile extends \Robo\Tasks
             ->convertFormatTo('yaml2jsonGroupByFiles')
             ->paths(['samples/*']);
     }
-
 }
