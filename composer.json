@@ -15,7 +15,7 @@
         "cheppers/git-hooks": "^0.0.8",
         "codeception/codeception": "^2.2",
         "squizlabs/php_codesniffer": "2.6.2",
-        "symfony/process": "^3.1"
+        "symfony/process": "^2.8|^3.1"
     },
     "autoload": {
         "psr-4": {
