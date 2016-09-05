@@ -1,6 +1,6 @@
 <?php
 
-use Cheppers\Robo\TsLint\Task\TaskTsLintRun;
+use Cheppers\Robo\TsLint\Task\Run;
 use Codeception\Util\Stub;
 use Robo\Robo;
 
@@ -8,12 +8,13 @@ use Robo\Robo;
  * Class TaskTsLintRunTest.
  */
 // @codingStandardsIgnoreStart
-class TaskTsLintRunTest extends \Codeception\Test\Unit
+class RunTest extends \Codeception\Test\Unit
 {
     // @codingStandardsIgnoreEnd
 
-    use Cheppers\Robo\TsLint\Task\LoadTasks;
+    use \Cheppers\Robo\TsLint\Task\LoadTasks;
     use \Robo\TaskAccessor;
+    use \Robo\Common\BuilderAwareTrait;
 
     /**
      * @var \League\Container\Container
@@ -26,8 +27,7 @@ class TaskTsLintRunTest extends \Codeception\Test\Unit
         // @codingStandardsIgnoreEnd
         $this->container = new \League\Container\Container();
         Robo::setContainer($this->container);
-        \Robo\Runner::configureContainer($this->container, null, new \Helper\Dummy\Output());
-        $this->container->addServiceProvider(Cheppers\Robo\TsLint\Task\LoadTasks::getTsLintServiceProvider());
+        Robo::configureContainer($this->container);
     }
 
     /**
@@ -219,14 +219,14 @@ class TaskTsLintRunTest extends \Codeception\Test\Unit
      */
     public function testBuildCommand($expected, array $options, array $paths)
     {
-        $tslint = new TaskTsLintRun($options, $paths);
+        $tslint = new Run($options, $paths);
         static::assertEquals($expected, $tslint->buildCommand());
     }
 
     public function testExitCodeConstants()
     {
-        static::assertEquals(0, TaskTsLintRun::EXIT_CODE_OK);
-        static::assertEquals(1, TaskTsLintRun::EXIT_CODE_ERROR);
+        static::assertEquals(0, Run::EXIT_CODE_OK);
+        static::assertEquals(1, Run::EXIT_CODE_ERROR);
     }
 
     /**
@@ -236,46 +236,46 @@ class TaskTsLintRunTest extends \Codeception\Test\Unit
     {
         return [
             'never-ok' => [
-                TaskTsLintRun::EXIT_CODE_OK,
+                Run::EXIT_CODE_OK,
                 [
                     'failOn' => 'never',
                 ],
-                TaskTsLintRun::EXIT_CODE_OK,
+                Run::EXIT_CODE_OK,
             ],
             'never-error' => [
-                TaskTsLintRun::EXIT_CODE_OK,
+                Run::EXIT_CODE_OK,
                 [
                     'failOn' => 'never',
                 ],
-                TaskTsLintRun::EXIT_CODE_ERROR,
+                Run::EXIT_CODE_ERROR,
             ],
             'warning-ok' => [
-                TaskTsLintRun::EXIT_CODE_OK,
+                Run::EXIT_CODE_OK,
                 [
                     'failOn' => 'warning',
                 ],
-                TaskTsLintRun::EXIT_CODE_OK,
+                Run::EXIT_CODE_OK,
             ],
             'warning-error' => [
-                TaskTsLintRun::EXIT_CODE_ERROR,
+                Run::EXIT_CODE_ERROR,
                 [
                     'failOn' => 'warning',
                 ],
-                TaskTsLintRun::EXIT_CODE_ERROR,
+                Run::EXIT_CODE_ERROR,
             ],
             'error-ok' => [
-                TaskTsLintRun::EXIT_CODE_OK,
+                Run::EXIT_CODE_OK,
                 [
                     'failOn' => 'error',
                 ],
-                TaskTsLintRun::EXIT_CODE_OK,
+                Run::EXIT_CODE_OK,
             ],
             'error-error' => [
-                TaskTsLintRun::EXIT_CODE_ERROR,
+                Run::EXIT_CODE_ERROR,
                 [
                     'failOn' => 'error',
                 ],
-                TaskTsLintRun::EXIT_CODE_ERROR,
+                Run::EXIT_CODE_ERROR,
             ],
         ];
     }
@@ -289,9 +289,9 @@ class TaskTsLintRunTest extends \Codeception\Test\Unit
      */
     public function testGetTaskExitCode($expected, $options, $exit_code)
     {
-        /** @var TaskTsLintRun $scss_lint */
+        /** @var Run $scss_lint */
         $scss_lint = Stub::construct(
-            TaskTsLintRun::class,
+            Run::class,
             [$options, []],
             ['exitCode' => $exit_code]
         );
@@ -329,10 +329,10 @@ class TaskTsLintRunTest extends \Codeception\Test\Unit
      * @dataProvider casesRun
      *
      * @param int $exit_code
-     * @param string $std_output
-     * @param bool $with_jar
+     * @param string $stdOutput
+     * @param bool $withJar
      */
-    public function testRun($exit_code, $std_output, $with_jar)
+    public function testRunSuccess($exit_code, $stdOutput, $withJar)
     {
         $options = [
             'workingDirectory' => 'my-working-dir',
@@ -341,24 +341,26 @@ class TaskTsLintRunTest extends \Codeception\Test\Unit
             'convertFormatTo' => 'yaml2jsonGroupByFiles',
         ];
 
-        /** @var TaskTsLintRun $task */
+        /** @var Run $task */
         $task = Stub::construct(
-            TaskTsLintRun::class,
+            Run::class,
             [$options, []],
             [
                 'processClass' => \Helper\Dummy\Process::class,
             ]
         );
 
+        $output = new \Helper\Dummy\Output();
         \Helper\Dummy\Process::$exitCode = $exit_code;
-        \Helper\Dummy\Process::$stdOutput = $with_jar ? json_encode($std_output) : $std_output;
+        \Helper\Dummy\Process::$stdOutput = $withJar ? json_encode($stdOutput) : $stdOutput;
 
         $task->setConfig(Robo::config());
         $task->setLogger($this->container->get('logger'));
-        $asset_jar = null;
-        if ($with_jar) {
-            $asset_jar = new \Cheppers\AssetJar\AssetJar();
-            $task->setAssetJar($asset_jar);
+        $task->setOutput($output);
+        $assetJar = null;
+        if ($withJar) {
+            $assetJar = new \Cheppers\AssetJar\AssetJar();
+            $task->setAssetJar($assetJar);
         }
 
         $result = $task->run();
@@ -369,12 +371,17 @@ class TaskTsLintRunTest extends \Codeception\Test\Unit
             \Helper\Dummy\Process::$instance->getWorkingDirectory()
         );
 
-        if ($with_jar) {
-            static::assertEquals($std_output, $asset_jar->getValue(['tsLintRun', 'report']));
+        if ($withJar) {
+            static::assertEquals(
+                $stdOutput,
+                $assetJar->getValue(['tsLintRun', 'report'])
+            );
         } else {
-            /** @var \Helper\Dummy\Output $output */
-            $output = $this->container->get('output');
-            static::assertContains($std_output, $output->output);
+            static::assertContains(
+                $stdOutput,
+                $output->output,
+                'Output contains'
+            );
         }
     }
 
@@ -389,9 +396,9 @@ class TaskTsLintRunTest extends \Codeception\Test\Unit
             'convertFormatTo' => 'yaml2jsonGroupByFiles',
         ];
 
-        /** @var TaskTsLintRun $task */
+        /** @var Run $task */
         $task = Stub::construct(
-            TaskTsLintRun::class,
+            Run::class,
             [$options, []],
             [
                 'processClass' => \Helper\Dummy\Process::class,
@@ -415,11 +422,5 @@ class TaskTsLintRunTest extends \Codeception\Test\Unit
         );
 
         static::assertEquals(['foo' => 'bar'], $asset_jar->getValue(['tsLintRun', 'report']));
-    }
-
-    public function testContainerInstance()
-    {
-        $task = $this->taskTsLintRun();
-        static::assertEquals(0, $task->getTaskExitCode());
     }
 }

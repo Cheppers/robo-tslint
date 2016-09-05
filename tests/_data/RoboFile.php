@@ -1,48 +1,39 @@
 <?php
 
+// @codingStandardsIgnoreStart
+
 /**
  * Class RoboFile.
  */
 class RoboFile extends \Robo\Tasks
-    // @codingStandardsIgnoreEnd
 {
+    // @codingStandardsIgnoreEnd
+
     use \Cheppers\Robo\TsLint\Task\LoadTasks;
 
     /**
-     * RoboFile constructor.
-     */
-    public function __construct()
-    {
-        $this->setContainer(\Robo\Robo::getContainer());
-
-        /** @var \League\Container\Container $c */
-        $c = $this->getContainer();
-        $c
-            ->addServiceProvider(static::getTsLintServiceProvider())
-            ->addServiceProvider(\Robo\Task\Filesystem\loadTasks::getFilesystemServices());
-    }
-
-    /**
-     * @return \Cheppers\Robo\TsLint\Task\TaskTsLintRun
+     * @return \Cheppers\Robo\TsLint\Task\Run
      */
     public function lintVerbose()
     {
         return $this
             ->taskTsLintRun()
+            ->setOutput($this->getOutput())
             ->format('verbose')
             ->paths(['samples/*']);
     }
 
     /**
-     * @return \Cheppers\Robo\TsLint\Task\TaskTsLintRun
+     * @return \Cheppers\Robo\TsLint\Task\Run
      */
     public function lintWithJar()
     {
-        $asset_jar = new \Cheppers\AssetJar\AssetJar([]);
+        $assetJar = new \Cheppers\AssetJar\AssetJar([]);
 
         return $this
             ->taskTsLintRun()
-            ->setAssetJar($asset_jar)
+            ->setOutput($this->getOutput())
+            ->setAssetJar($assetJar)
             ->setAssetJarMap('report', ['taskTsLint', 'report'])
             ->configFile('tslint.json')
             ->formattersDir('node_modules/tslint-formatters/lib/tslint/formatters')

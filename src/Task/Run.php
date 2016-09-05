@@ -17,7 +17,7 @@ use Symfony\Component\Process\Process;
  *
  * @package Cheppers\Robo\TsLint\Task
  */
-class TaskTsLintRun extends BaseTask implements AssetJarAwareInterface
+class Run extends BaseTask implements AssetJarAwareInterface
 {
 
     use AssetJarAware;

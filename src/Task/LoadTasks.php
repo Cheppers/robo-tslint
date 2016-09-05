@@ -2,8 +2,6 @@
 
 namespace Cheppers\Robo\TsLint\Task;
 
-use Robo\Container\SimpleServiceProvider;
-
 /**
  * Class LoadTasks.
  *
@@ -11,17 +9,6 @@ use Robo\Container\SimpleServiceProvider;
  */
 trait LoadTasks
 {
-
-    /**
-     * @return \League\Container\ServiceProvider\SignatureServiceProviderInterface
-     */
-    public static function getTsLintServiceProvider()
-    {
-        return new SimpleServiceProvider([
-            'taskTsLintRun' => TaskTsLintRun::class,
-        ]);
-    }
-
     /**
      * Wrapper for tslint.
      *
@@ -30,11 +17,11 @@ trait LoadTasks
      * @param string[] $paths
      *   File paths.
      *
-     * @return \Cheppers\Robo\TsLint\Task\TaskTsLintRun
+     * @return \Cheppers\Robo\TsLint\Task\Run
      *   A lint runner task instance.
      */
     protected function taskTsLintRun(array $options = [], array $paths = [])
     {
-        return $this->task(__FUNCTION__, $options, $paths);
+        return $this->task(Run::class, $options, $paths);
     }
 }
