@@ -1,7 +1,9 @@
 <?php
 
-use Cheppers\Robo\TsLint\Task\Run;
+use Cheppers\AssetJar\AssetJar;
+use Cheppers\Robo\TsLint\Task\Run as RunTask;
 use Codeception\Util\Stub;
+use Helper\Dummy\Process as DummyProcess;
 use Robo\Robo;
 
 /**
@@ -15,6 +17,20 @@ class RunTest extends \Codeception\Test\Unit
     use \Cheppers\Robo\TsLint\Task\LoadTasks;
     use \Robo\TaskAccessor;
     use \Robo\Common\BuilderAwareTrait;
+
+    /**
+     * @param $name
+     *
+     * @return \ReflectionMethod
+     */
+    protected static function getMethod($name)
+    {
+        $class = new ReflectionClass(RunTask::class);
+        $method = $class->getMethod($name);
+        $method->setAccessible(true);
+
+        return $method;
+    }
 
     /**
      * @var \League\Container\Container
@@ -36,6 +52,28 @@ class RunTest extends \Codeception\Test\Unit
     public function getContainer()
     {
         return $this->container;
+    }
+
+    public function testGetSetLintReporters()
+    {
+        $task = new RunTask([
+            'lintReporters' => [
+                'aKey' => 'aValue',
+            ],
+        ]);
+
+        $task
+            ->addLintReporter('bKey', 'bValue')
+            ->addLintReporter('cKey', 'cValue')
+            ->removeLintReporter('bKey');
+
+        $this->assertEquals(
+            [
+                'aKey' => 'aValue',
+                'cKey' => 'cValue',
+            ],
+            $task->getLintReporters()
+        );
     }
 
     /**
@@ -219,14 +257,16 @@ class RunTest extends \Codeception\Test\Unit
      */
     public function testBuildCommand($expected, array $options, array $paths)
     {
-        $tslint = new Run($options, $paths);
+        $tslint = new RunTask($options, $paths);
         static::assertEquals($expected, $tslint->buildCommand());
     }
 
     public function testExitCodeConstants()
     {
-        static::assertEquals(0, Run::EXIT_CODE_OK);
-        static::assertEquals(1, Run::EXIT_CODE_ERROR);
+        static::assertEquals(0, RunTask::EXIT_CODE_OK);
+        static::assertEquals(1, RunTask::EXIT_CODE_WARNING);
+        static::assertEquals(2, RunTask::EXIT_CODE_ERROR);
+        static::assertEquals(3, RunTask::EXIT_CODE_INVALID);
     }
 
     /**
@@ -234,49 +274,71 @@ class RunTest extends \Codeception\Test\Unit
      */
     public function casesGetTaskExitCode()
     {
+        $o = RunTask::EXIT_CODE_OK;
+        $w = RunTask::EXIT_CODE_WARNING;
+        $e = RunTask::EXIT_CODE_ERROR;
+        $u = 5;
+
         return [
-            'never-ok' => [
-                Run::EXIT_CODE_OK,
-                [
-                    'failOn' => 'never',
-                ],
-                Run::EXIT_CODE_OK,
-            ],
-            'never-error' => [
-                Run::EXIT_CODE_OK,
-                [
-                    'failOn' => 'never',
-                ],
-                Run::EXIT_CODE_ERROR,
-            ],
-            'warning-ok' => [
-                Run::EXIT_CODE_OK,
-                [
-                    'failOn' => 'warning',
-                ],
-                Run::EXIT_CODE_OK,
-            ],
-            'warning-error' => [
-                Run::EXIT_CODE_ERROR,
-                [
-                    'failOn' => 'warning',
-                ],
-                Run::EXIT_CODE_ERROR,
-            ],
-            'error-ok' => [
-                Run::EXIT_CODE_OK,
-                [
-                    'failOn' => 'error',
-                ],
-                Run::EXIT_CODE_OK,
-            ],
-            'error-error' => [
-                Run::EXIT_CODE_ERROR,
-                [
-                    'failOn' => 'error',
-                ],
-                Run::EXIT_CODE_ERROR,
-            ],
+            'never-000' => [$o, 'never', 0, 0, 0],
+            'never-001' => [$o, 'never', 0, 0, 1],
+            'never-002' => [$o, 'never', 0, 0, 2],
+            'never-005' => [$u, 'never', 0, 0, 5],
+
+            'never-010' => [$o, 'never', 0, 1, 0],
+            'never-011' => [$o, 'never', 0, 1, 1],
+            'never-012' => [$o, 'never', 0, 1, 2],
+            'never-015' => [$u, 'never', 0, 1, 5],
+
+            'never-100' => [$o, 'never', 1, 0, 0],
+            'never-101' => [$o, 'never', 1, 0, 1],
+            'never-102' => [$o, 'never', 1, 0, 2],
+            'never-105' => [$u, 'never', 1, 0, 5],
+
+            'never-110' => [$o, 'never', 1, 1, 0],
+            'never-111' => [$o, 'never', 1, 1, 1],
+            'never-112' => [$o, 'never', 1, 1, 2],
+            'never-115' => [$u, 'never', 1, 1, 5],
+
+            'warning-000' => [$o, 'warning', 0, 0, 0],
+            'warning-001' => [$o, 'warning', 0, 0, 1],
+            'warning-002' => [$o, 'warning', 0, 0, 2],
+            'warning-005' => [$u, 'warning', 0, 0, 5],
+
+            'warning-010' => [$w, 'warning', 0, 1, 0],
+            'warning-011' => [$w, 'warning', 0, 1, 1],
+            'warning-012' => [$w, 'warning', 0, 1, 2],
+            'warning-015' => [$u, 'warning', 0, 1, 5],
+
+            'warning-100' => [$e, 'warning', 1, 0, 0],
+            'warning-101' => [$e, 'warning', 1, 0, 1],
+            'warning-102' => [$e, 'warning', 1, 0, 2],
+            'warning-105' => [$u, 'warning', 1, 0, 5],
+
+            'warning-110' => [$e, 'warning', 1, 1, 0],
+            'warning-111' => [$e, 'warning', 1, 1, 1],
+            'warning-112' => [$e, 'warning', 1, 1, 2],
+            'warning-115' => [$u, 'warning', 1, 1, 5],
+
+            'error-000' => [$o, 'error', 0, 0, 0],
+            'error-001' => [$o, 'error', 0, 0, 1],
+            'error-002' => [$o, 'error', 0, 0, 2],
+            'error-005' => [$u, 'error', 0, 0, 5],
+
+            'error-010' => [$o, 'error', 0, 1, 0],
+            'error-011' => [$o, 'error', 0, 1, 1],
+            'error-012' => [$o, 'error', 0, 1, 2],
+            'error-015' => [$u, 'error', 0, 1, 5],
+
+            'error-100' => [$e, 'error', 1, 0, 0],
+            'error-101' => [$e, 'error', 1, 0, 1],
+            'error-102' => [$e, 'error', 1, 0, 2],
+            'error-105' => [$u, 'error', 1, 0, 5],
+
+            'error-110' => [$e, 'error', 1, 1, 0],
+            'error-111' => [$e, 'error', 1, 1, 1],
+            'error-112' => [$e, 'error', 1, 1, 2],
+            'error-115' => [$u, 'error', 1, 1, 5],
         ];
     }
 
@@ -284,19 +346,24 @@ class RunTest extends \Codeception\Test\Unit
      * @dataProvider casesGetTaskExitCode
      *
      * @param int $expected
-     * @param array $options
-     * @param int $exit_code
+     * @param string $failOn
+     * @param int $numOfErrors
+     * @param int $numOfWarnings
+     * @param int $exitCode
      */
-    public function testGetTaskExitCode($expected, $options, $exit_code)
+    public function testGetTaskExitCode($expected, $failOn, $numOfErrors, $numOfWarnings, $exitCode)
     {
-        /** @var Run $scss_lint */
-        $scss_lint = Stub::construct(
-            Run::class,
-            [$options, []],
-            ['exitCode' => $exit_code]
+        /** @var RunTask $runTask */
+        $runTask = Stub::construct(
+            RunTask::class,
+            [['failOn' => $failOn]],
+            ['exitCode' => $exitCode]
         );
 
-        static::assertEquals($expected, $scss_lint->getTaskExitCode());
+        static::assertEquals(
+            $expected,
+            static::getMethod('getTaskExitCode')->invokeArgs($runTask, [$numOfErrors, $numOfWarnings])
+        );
     }
 
     /**
@@ -305,19 +372,58 @@ class RunTest extends \Codeception\Test\Unit
     public function casesRun()
     {
         return [
-            'without asset jar' => [
+            'withoutJar - success' => [
                 0,
-                'my-dummy-output',
+                [],
                 false,
             ],
-            'with_asset_jar-success' => [
+            'withoutJar - warning' => [
+                1,
+                [
+                    'a.ts' => [
+                        [
+                            'severity' => 'warning',
+                        ],
+                    ],
+                ],
+                false,
+            ],
+            'withoutJar - error' => [
+                2,
+                [
+                    'a.ts' => [
+                        [
+                            'severity' => 'error',
+                        ],
+                    ]
+                ],
+                false,
+            ],
+            'withJar - success' => [
                 0,
                 [],
                 true,
             ],
-            'with_asset_jar-fail' => [
+            'withJar - warning' => [
                 1,
-                ['file-01.ts' => []],
+                [
+                    'a.ts' => [
+                        [
+                            'severity' => 'warning',
+                        ],
+                    ],
+                ],
+                true,
+            ],
+            'withJar - error' => [
+                2,
+                [
+                    'a.ts' => [
+                        [
+                            'severity' => 'error',
+                        ],
+                    ],
+                ],
                 true,
             ],
         ];
@@ -328,99 +434,113 @@ class RunTest extends \Codeception\Test\Unit
      *
      * @dataProvider casesRun
      *
-     * @param int $exit_code
-     * @param string $stdOutput
+     * @param int $expectedExitCode
+     * @param array $expectedReport
      * @param bool $withJar
      */
-    public function testRunSuccess($exit_code, $stdOutput, $withJar)
+    public function testRun($expectedExitCode, array $expectedReport, $withJar)
     {
         $options = [
             'workingDirectory' => 'my-working-dir',
             'assetJarMapping' => ['report' => ['tsLintRun', 'report']],
             'format' => 'yaml',
+            'failOn' => 'warning',
             'convertFormatTo' => 'yaml2jsonGroupByFiles',
         ];
 
-        /** @var Run $task */
-        $task = Stub::construct(
-            Run::class,
+        /** @var RunTask $runTask */
+        $runTask = Stub::construct(
+            RunTask::class,
             [$options, []],
             [
-                'processClass' => \Helper\Dummy\Process::class,
+                'processClass' => DummyProcess::class,
             ]
         );
 
         $output = new \Helper\Dummy\Output();
-        \Helper\Dummy\Process::$exitCode = $exit_code;
-        \Helper\Dummy\Process::$stdOutput = $withJar ? json_encode($stdOutput) : $stdOutput;
+        DummyProcess::$exitCode = $expectedExitCode;
+        DummyProcess::$stdOutput = json_encode($expectedReport);
 
-        $task->setConfig(Robo::config());
-        $task->setLogger($this->container->get('logger'));
-        $task->setOutput($output);
+        $runTask->setLogger($this->container->get('logger'));
+        $runTask->setOutput($output);
         $assetJar = null;
         if ($withJar) {
-            $assetJar = new \Cheppers\AssetJar\AssetJar();
-            $task->setAssetJar($assetJar);
+            $assetJar = new AssetJar();
+            $runTask->setAssetJar($assetJar);
         }
 
-        $result = $task->run();
+        $result = $runTask->run();
 
-        static::assertEquals($exit_code, $result->getExitCode());
+        static::assertEquals($expectedExitCode, $result->getExitCode(), 'Exit code');
         static::assertEquals(
             $options['workingDirectory'],
-            \Helper\Dummy\Process::$instance->getWorkingDirectory()
+            DummyProcess::$instance->getWorkingDirectory(),
+            'Working directory'
         );
 
         if ($withJar) {
+            /** @var \Cheppers\LintReport\ReportWrapperInterface $reportWrapper */
+            $reportWrapper = $assetJar->getValue(['tsLintRun', 'report']);
             static::assertEquals(
-                $stdOutput,
-                $assetJar->getValue(['tsLintRun', 'report'])
+                $expectedReport,
+                $reportWrapper->getReport(),
+                'Output equals with jar'
             );
         } else {
-            static::assertContains(
-                $stdOutput,
-                $output->output,
-                'Output contains'
+            static::assertEquals(
+                $expectedReport,
+                json_decode($output->output, true),
+                'Output equals without jar'
             );
         }
     }
 
     public function testRunFailed()
     {
-        $exit_code = 1;
-        $std_output = '{"foo": "bar"}';
+        $exitCode = 1;
+        $expectedReport = [
+            'a.ts' => [
+                [
+                    'severity' => 'warning',
+                ],
+            ],
+        ];
+        $expectedReportJson = json_encode($expectedReport);
         $options = [
             'workingDirectory' => 'my-working-dir',
             'assetJarMapping' => ['report' => ['tsLintRun', 'report']],
+            'failOn' => 'warning',
             'format' => 'yaml',
             'convertFormatTo' => 'yaml2jsonGroupByFiles',
         ];
 
-        /** @var Run $task */
+        /** @var RunTask $task */
         $task = Stub::construct(
-            Run::class,
+            RunTask::class,
             [$options, []],
             [
-                'processClass' => \Helper\Dummy\Process::class,
+                'processClass' => DummyProcess::class,
             ]
         );
 
-        \Helper\Dummy\Process::$exitCode = $exit_code;
-        \Helper\Dummy\Process::$stdOutput = $std_output;
+        DummyProcess::$exitCode = $exitCode;
+        DummyProcess::$stdOutput = $expectedReportJson;
 
         $task->setConfig(Robo::config());
         $task->setLogger($this->container->get('logger'));
-        $asset_jar = new \Cheppers\AssetJar\AssetJar();
-        $task->setAssetJar($asset_jar);
+        $assetJar = new AssetJar();
+        $task->setAssetJar($assetJar);
 
         $result = $task->run();
 
-        static::assertEquals($exit_code, $result->getExitCode());
+        static::assertEquals($exitCode, $result->getExitCode());
         static::assertEquals(
             $options['workingDirectory'],
-            \Helper\Dummy\Process::$instance->getWorkingDirectory()
+            DummyProcess::$instance->getWorkingDirectory()
         );
 
-        static::assertEquals(['foo' => 'bar'], $asset_jar->getValue(['tsLintRun', 'report']));
+        /** @var \Cheppers\LintReport\ReportWrapperInterface $reportWrapper */
+        $reportWrapper = $assetJar->getValue(['tsLintRun', 'report']);
+        static::assertEquals($expectedReport, $reportWrapper->getReport());
     }
 }

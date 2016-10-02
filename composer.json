@@ -10,13 +10,16 @@
     "prefer-stable": true,
     "require": {
         "cheppers/asset-jar": "^0.0",
-        "consolidation/robo": "1.0.0-RC2"
+        "consolidation/robo": "1.0.0-RC2",
+        "samsonasik/package-versions": "^1.1"
     },
     "require-dev": {
         "cheppers/git-hooks": "^0.0.8",
-        "cheppers/robo-phpcs": "^0.0.4",
+        "cheppers/lint-report": "^0.0.4",
+        "cheppers/robo-phpcs": "^0.0.7",
         "codeception/codeception": "^2.2",
-        "symfony/process": "^2.8|^3.1"
+        "symfony/process": "^2.8 || ^3.1",
+        "symfony/yaml": "^2.8 || ^3.1"
     },
     "autoload": {
         "psr-4": {
