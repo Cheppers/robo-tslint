@@ -4,10 +4,24 @@ namespace Cheppers\Robo\TsLint\Task;
 
 use Cheppers\AssetJar\AssetJarAware;
 use Cheppers\AssetJar\AssetJarAwareInterface;
+use Cheppers\LintReport\ReporterInterface;
+use Cheppers\LintReport\ReportWrapperInterface;
+use Cheppers\Robo\TsLint\LintReportWrapper\Json\ReportWrapper as JsonReportWrapper;
+use Cheppers\Robo\TsLint\LintReportWrapper\Yaml\ReportWrapper as YamlReportWrapper;
+use League\Container\ContainerAwareInterface;
+use League\Container\ContainerAwareTrait;
+use PackageVersions\Versions;
+use Robo\Common\BuilderAwareTrait;
 use Robo\Common\IO;
+use Robo\Contract\BuilderAwareInterface;
+use Robo\Contract\OutputAwareInterface;
 use Robo\Result;
 use Robo\Task\BaseTask;
+use Robo\Task\Filesystem\loadTasks as FsLoadTasks;
+use Robo\Task\Filesystem\loadShortcuts as FsShortCuts;
+use Robo\TaskAccessor;
 use Symfony\Component\Process\Process;
+use Symfony\Component\Yaml\Yaml;
 
 /**
  * Class TaskTsLintRun.
@@ -17,11 +31,20 @@ use Symfony\Component\Process\Process;
  *
  * @package Cheppers\Robo\TsLint\Task
  */
-class Run extends BaseTask implements AssetJarAwareInterface
+class Run extends BaseTask implements
+    AssetJarAwareInterface,
+    ContainerAwareInterface,
+    BuilderAwareInterface,
+    OutputAwareInterface
 {
 
     use AssetJarAware;
+    use ContainerAwareTrait;
+    use BuilderAwareTrait;
     use IO;
+    use FsLoadTasks;
+    use FsShortCuts;
+    use TaskAccessor;
 
     /**
      * Exit code: No lints were found.
@@ -29,9 +52,19 @@ class Run extends BaseTask implements AssetJarAwareInterface
     const EXIT_CODE_OK = 0;
 
     /**
+     * Lints with a severity of warning were reported (no errors).
+     */
+    const EXIT_CODE_WARNING = 1;
+
+    /**
      * One or more errors were reported (and any number of warnings).
      */
-    const EXIT_CODE_ERROR = 1;
+    const EXIT_CODE_ERROR = 2;
+
+    /**
+     * Something is invalid.
+     */
+    const EXIT_CODE_INVALID = 3;
 
     /**
      * @todo Some kind of dependency injection would be awesome.
@@ -112,6 +145,11 @@ class Run extends BaseTask implements AssetJarAwareInterface
     protected $format = '';
 
     /**
+     * @var \Cheppers\LintReport\ReporterInterface[]
+     */
+    protected $lintReporters = [];
+
+    /**
      * The location of a tsconfig.json file that will be used to determine which files will be linted.
      *
      * @var string
@@ -153,7 +191,9 @@ class Run extends BaseTask implements AssetJarAwareInterface
      */
     protected $exitMessages = [
         0 => 'No lints were found',
-        1 => 'One or more errors were reported (and any number of warnings)',
+        1 => 'Lints with a severity of warning were reported (no errors)',
+        2 => 'One or more errors were reported (and any number of warnings)',
+        3 => 'Extra lint reporters can be used only if the output format is "json".',
     ];
 
     /**
@@ -220,6 +260,10 @@ class Run extends BaseTask implements AssetJarAwareInterface
 
                 case 'format':
                     $this->format($value);
+                    break;
+
+                case 'lintReporters':
+                    $this->setLintReporters($value);
                     break;
 
                 case 'project':
@@ -371,6 +415,51 @@ class Run extends BaseTask implements AssetJarAwareInterface
     }
 
     /**
+     * @return \Cheppers\LintReport\ReporterInterface[]
+     */
+    public function getLintReporters()
+    {
+        return $this->lintReporters;
+    }
+
+    /**
+     * @param array $lintReporters
+     *
+     * @return $this
+     */
+    public function setLintReporters(array $lintReporters)
+    {
+        $this->lintReporters = $lintReporters;
+
+        return $this;
+    }
+
+    /**
+     * @param string $id
+     * @param string|\Cheppers\LintReport\ReporterInterface $lintReporter
+     *
+     * @return $this
+     */
+    public function addLintReporter($id, $lintReporter = null)
+    {
+        $this->lintReporters[$id] = $lintReporter;
+
+        return $this;
+    }
+
+    /**
+     * @param string $id
+     *
+     * @return $this
+     */
+    public function removeLintReporter($id)
+    {
+        unset($this->lintReporters[$id]);
+
+        return $this;
+    }
+
+    /**
      * @param string $value
      *
      * @return $this
@@ -454,8 +543,14 @@ class Run extends BaseTask implements AssetJarAwareInterface
     public function run()
     {
         $command = $this->buildCommand();
-
         $this->printTaskInfo(sprintf('TsLint task runs: <info>%s</info>', $command));
+
+        $lintReporters = $this->initLintReporters();
+        if ($lintReporters && !$this->isOutputFormatMachineReadable()) {
+            $this->exitCode = static::EXIT_CODE_INVALID;
+
+            return new Result($this, $this->exitCode, $this->getExitMessage($this->exitCode));
+        }
 
         /** @var Process $process */
         $process = new $this->processClass($command);
@@ -463,45 +558,47 @@ class Run extends BaseTask implements AssetJarAwareInterface
             $process->setWorkingDirectory($this->workingDirectory);
         }
 
+        $result = $this->prepareOutputDirectory();
+        if (!$result->wasSuccessful()) {
+            return $result;
+        }
+
         $this->startTimer();
-        $process->run();
+        $this->exitCode = $process->run();
         $this->stopTimer();
 
-        $this->exitCode = $process->getExitCode();
+        $numOfErrors = $this->exitCode;
+        $numOfWarnings = 0;
+        if ($this->isLintSuccess()) {
+            $originalOutput = $process->getOutput();
+            if ($this->isOutputFormatMachineReadable()) {
+                $machineOutput = ($this->out ? file_get_contents($this->out) : $originalOutput);
+                $reportWrapper = $this->decodeOutput($machineOutput);
+                $numOfErrors = $reportWrapper->numOfErrors();
+                $numOfWarnings = $reportWrapper->numOfWarnings();
 
-        $write_output = true;
+                if ($this->isReportHasToBePutBackIntoJar()) {
+                    $this->setAssetJarValue('report', $reportWrapper);
+                }
 
-        $report_parents = $this->getAssetJarMap('report');
-        if ($this->hasAssetJar()
-            && $report_parents
-            && !$this->out
-            && $this->format === 'yaml'
-            && $this->convertFormatTo === 'yaml2jsonGroupByFiles'
-            && in_array($this->exitCode, $this->lintSuccessExitCodes())
-        ) {
-            $report = json_decode($process->getOutput(), true);
-            if ($report) {
-                $this->exitCode = static::EXIT_CODE_ERROR;
+                foreach ($lintReporters as $lintReporter) {
+                    $lintReporter
+                        ->setReportWrapper($reportWrapper)
+                        ->generate();
+                }
             }
 
-            $write_output = false;
-            $this
-                ->getAssetJar()
-                ->setValue($report_parents, $report);
+            if (!$lintReporters) {
+                $this->output()->write($originalOutput);
+            }
         }
 
-        if ($write_output) {
-            $this->getOutput()->writeln($process->getOutput());
-        }
-
-        $message = isset($this->exitMessages[$this->exitCode]) ?
-            $this->exitMessages[$this->exitCode]
-            : $process->getErrorOutput();
+        $exitCode = $this->getTaskExitCode($numOfErrors, $numOfWarnings);
 
         return new Result(
             $this,
-            $this->getTaskExitCode(),
-            $message,
+            $exitCode,
+            $this->getExitMessage($exitCode) ?: $process->getErrorOutput(),
             [
                 'time' => $this->getExecutionTime(),
             ]
@@ -593,22 +690,141 @@ class Run extends BaseTask implements AssetJarAwareInterface
     }
 
     /**
+     * @return bool
+     */
+    protected function isReportHasToBePutBackIntoJar()
+    {
+        return (
+            $this->hasAssetJar()
+            && $this->getAssetJarMap('report')
+            && $this->isLintSuccess()
+        );
+    }
+
+    /**
+     * @return bool
+     */
+    protected function isOutputFormatMachineReadable()
+    {
+        return ($this->format === 'yaml');
+    }
+
+    /**
+     * @param string $output
+     *
+     * @return ReportWrapperInterface
+     */
+    protected function decodeOutput($output)
+    {
+        $format = ($this->convertFormatTo === 'yaml2jsonGroupByFiles' ? 'json' : 'yaml');
+
+        switch ($format) {
+            case 'json':
+                return new JsonReportWrapper(json_decode($output, true));
+
+            case 'yaml':
+                if (function_exists('yaml_parse')) {
+                    $decoded = yaml_parse($output);
+                } else {
+                    $yamlVersion = ltrim(Versions::getShortVersion('symfony/yaml'), 'v');
+                    if (version_compare($yamlVersion, '3.1.0', '>=')) {
+                        $decoded = Yaml::parse($output, Yaml::PARSE_OBJECT_FOR_MAP);
+                    } else {
+                        $decoded = Yaml::parse($output);
+                    }
+                }
+
+                return new YamlReportWrapper($decoded);
+        }
+
+        return null;
+    }
+
+    /**
+     * @return \Cheppers\LintReport\ReporterInterface[]
+     */
+    protected function initLintReporters()
+    {
+        $lintReporters = [];
+        $c = $this->getContainer();
+        foreach ($this->getLintReporters() as $id => $lintReporter) {
+            if ($lintReporter === false) {
+                continue;
+            }
+
+            if (!$lintReporter) {
+                $lintReporter = $c->get($id);
+            } elseif (is_string($lintReporter)) {
+                $lintReporter = $c->get($lintReporter);
+            }
+
+            if ($lintReporter instanceof ReporterInterface) {
+                $lintReporters[$id] = $lintReporter;
+                if (!$lintReporter->getDestination()) {
+                    $lintReporter
+                        ->setFilePathStyle('relative')
+                        ->setDestination($this->output());
+                }
+            }
+        }
+
+        return $lintReporters;
+    }
+
+    /**
      * Get the exit code regarding the failOn settings.
      *
+     * @param int $numOfErrors
+     * @param int $numOfWarnings
+     *
      * @return int
-     *   Exit code.
      */
-    public function getTaskExitCode()
+    protected function getTaskExitCode($numOfErrors, $numOfWarnings)
     {
-        $tolerance = [
-            'never' => [static::EXIT_CODE_ERROR,],
-        ];
+        if ($this->isLintSuccess()) {
+            switch ($this->failOn) {
+                case 'never':
+                    return static::EXIT_CODE_OK;
 
-        if (isset($tolerance[$this->failOn]) && in_array($this->exitCode, $tolerance[$this->failOn])) {
-            return static::EXIT_CODE_OK;
+                case 'warning':
+                    if ($numOfErrors) {
+                        return static::EXIT_CODE_ERROR;
+                    }
+
+                    return $numOfWarnings ? static::EXIT_CODE_WARNING : static::EXIT_CODE_OK;
+
+                case 'error':
+                    return $numOfErrors ? static::EXIT_CODE_ERROR : static::EXIT_CODE_OK;
+            }
         }
 
         return $this->exitCode;
+    }
+
+    /**
+     * @param int $exitCode
+     *
+     * @return string
+     */
+    protected function getExitMessage($exitCode)
+    {
+        if (isset($this->exitMessages[$exitCode])) {
+            return $this->exitMessages[$exitCode];
+        }
+
+        return false;
+    }
+
+    /**
+     * Returns true if the lint ran successfully.
+     *
+     * Returns true even if there was any code style error or warning.
+     *
+     * @return bool
+     */
+    protected function isLintSuccess()
+    {
+        return in_array($this->exitCode, $this->lintSuccessExitCodes());
     }
 
     /**
@@ -618,7 +834,37 @@ class Run extends BaseTask implements AssetJarAwareInterface
     {
         return [
             static::EXIT_CODE_OK,
+            static::EXIT_CODE_WARNING,
             static::EXIT_CODE_ERROR,
         ];
+    }
+
+    /**
+     * Prepare directory for report outputs.
+     *
+     * @return null|\Robo\Result
+     *   Returns NULL on success or an error \Robo\Result.
+     */
+    protected function prepareOutputDirectory()
+    {
+        if (empty($this->out)) {
+            return Result::success($this, 'There is no directory to create.');
+        }
+
+        $currentDir = getcwd();
+        if ($this->workingDirectory) {
+            chdir($this->workingDirectory);
+        }
+
+        $dir = pathinfo($this->out, PATHINFO_DIRNAME);
+        if (!file_exists($dir)) {
+            $result = $this->_mkdir($dir);
+        } else {
+            $result = Result::success($this, 'All directory was created successfully.');
+        }
+
+        chdir($currentDir);
+
+        return $result;
     }
 }

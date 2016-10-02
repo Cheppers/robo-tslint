@@ -1,0 +1,14 @@
+samples/invalid-01.d.ts
++----------+------+--------------------+
+| Severity | Line | Message            |
++----------+------+--------------------+
+| error    |    4 | missing whitespace |
++----------+------+--------------------+
+
+samples/invalid-02.d.ts
++----------+------+-------------------------+
+| Severity | Line | Message                 |
++----------+------+-------------------------+
+| error    |    3 | misplaced opening brace |
+| error    |    5 | missing whitespace      |
++----------+------+-------------------------+

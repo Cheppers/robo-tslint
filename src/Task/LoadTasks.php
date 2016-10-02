@@ -2,6 +2,9 @@
 
 namespace Cheppers\Robo\TsLint\Task;
 
+use League\Container\ContainerAwareInterface;
+use Robo\Contract\OutputAwareInterface;
+
 /**
  * Class LoadTasks.
  *
@@ -22,6 +25,16 @@ trait LoadTasks
      */
     protected function taskTsLintRun(array $options = [], array $paths = [])
     {
-        return $this->task(Run::class, $options, $paths);
+        /** @var \Cheppers\Robo\TSLint\Task\Run $task */
+        $task = $this->task(Run::class, $options, $paths);
+        if ($this instanceof ContainerAwareInterface) {
+            $task->setContainer($this->getContainer());
+        }
+
+        if ($this instanceof OutputAwareInterface) {
+            $task->setOutput($this->output());
+        }
+
+        return $task;
     }
 }

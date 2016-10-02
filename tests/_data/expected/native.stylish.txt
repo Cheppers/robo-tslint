@@ -1,0 +1,6 @@
+samples/invalid-01.d.ts
+5:16  whitespace  missing whitespace
+
+samples/invalid-02.d.ts
+4:5   one-line    misplaced opening brace
+6:16  whitespace  missing whitespace
