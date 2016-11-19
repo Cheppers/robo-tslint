@@ -13,6 +13,7 @@ use League\Container\ContainerAwareTrait;
 use PackageVersions\Versions;
 use Robo\Common\BuilderAwareTrait;
 use Robo\Common\IO;
+use Robo\Common\OutputAwareTrait;
 use Robo\Contract\BuilderAwareInterface;
 use Robo\Contract\OutputAwareInterface;
 use Robo\Result;
@@ -40,10 +41,9 @@ class Run extends BaseTask implements
 
     use AssetJarAware;
     use ContainerAwareTrait;
-    use BuilderAwareTrait;
-    use IO;
     use FsLoadTasks;
     use FsShortCuts;
+    use OutputAwareTrait;
     use TaskAccessor;
 
     /**
