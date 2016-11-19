@@ -11,12 +11,10 @@ use Robo\Contract\ConfigAwareInterface;
  * Class RoboFile.
  */
 // @codingStandardsIgnoreStart
-class RoboFile extends \Robo\Tasks implements ContainerAwareInterface, ConfigAwareInterface
+class RoboFile extends \Robo\Tasks
 {
     // @codingStandardsIgnoreEnd
-    use \Cheppers\Robo\TsLint\Task\LoadTasks;
-    use \League\Container\ContainerAwareTrait;
-    use \Robo\Common\ConfigAwareTrait;
+    use \Cheppers\Robo\TsLint\TsLintTaskLoader;
 
     /**
      * @var string

@@ -1,6 +1,6 @@
 <?php
 
-namespace Cheppers\Robo\TsLint\Task;
+namespace Cheppers\Robo\TsLint;
 
 use League\Container\ContainerAwareInterface;
 use Robo\Contract\OutputAwareInterface;
@@ -10,7 +10,7 @@ use Robo\Contract\OutputAwareInterface;
  *
  * @package Cheppers\Robo\TsLint\Task
  */
-trait LoadTasks
+trait TsLintTaskLoader
 {
     /**
      * Wrapper for tslint.
@@ -26,7 +26,7 @@ trait LoadTasks
     protected function taskTsLintRun(array $options = [], array $paths = [])
     {
         /** @var \Cheppers\Robo\TSLint\Task\Run $task */
-        $task = $this->task(Run::class, $options, $paths);
+        $task = $this->task(Task\Run::class, $options, $paths);
         if ($this instanceof ContainerAwareInterface) {
             $task->setContainer($this->getContainer());
         }

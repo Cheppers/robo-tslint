@@ -1,15 +1,14 @@
 <?php
 
-// @codingStandardsIgnoreStart
+namespace Cheppers\Robo\TsLint\Test\LintReportWrapper\Yaml;
+
 use Cheppers\Robo\TsLint\LintReportWrapper\Yaml\ReportWrapper;
 
 /**
  * Class ReportWrapperTest.
  */
-class YamlReportWrapperTest extends \Codeception\Test\Unit
+class ReportWrapperTest extends \Codeception\Test\Unit
 {
-    // @codingStandardsIgnoreEnd
-
     /**
      * @var \UnitTester
      */

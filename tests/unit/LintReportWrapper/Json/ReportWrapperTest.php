@@ -1,15 +1,14 @@
 <?php
 
-// @codingStandardsIgnoreStart
+namespace Cheppers\Robo\TsLint\Test\LintReportWrapper\Json;
+
 use Cheppers\Robo\TsLint\LintReportWrapper\Json\ReportWrapper;
 
 /**
  * Class ReportWrapperTest.
  */
-class JsonReportWrapperTest extends \Codeception\Test\Unit
+class ReportWrapperTest extends \Codeception\Test\Unit
 {
-    // @codingStandardsIgnoreEnd
-
     /**
      * @var \UnitTester
      */
@@ -152,10 +151,10 @@ class JsonReportWrapperTest extends \Codeception\Test\Unit
     {
         $rw = new ReportWrapper($report);
 
-        $this->assertEquals($expected['countFiles'], $rw->countFiles());
-        $this->assertEquals($expected['numOfErrors'], $rw->numOfErrors());
-        $this->assertEquals($expected['numOfWarnings'], $rw->numOfWarnings());
-        $this->assertEquals($expected['highestSeverity'], $rw->highestSeverity());
+        $this->tester->assertEquals($expected['countFiles'], $rw->countFiles());
+        $this->tester->assertEquals($expected['numOfErrors'], $rw->numOfErrors());
+        $this->tester->assertEquals($expected['numOfWarnings'], $rw->numOfWarnings());
+        $this->tester->assertEquals($expected['highestSeverity'], $rw->highestSeverity());
 
         /**
          * @var string $filePath
@@ -163,11 +162,11 @@ class JsonReportWrapperTest extends \Codeception\Test\Unit
          */
         foreach ($rw->yieldFiles() as $filePath => $fw) {
             $fileStats = $filesStats[$filePath];
-            $this->assertEquals($filePath, $fw->filePath());
-            $this->assertEquals($fileStats['numOfErrors'], $fw->numOfErrors());
-            $this->assertEquals($fileStats['numOfWarnings'], $fw->numOfWarnings());
-            $this->assertEquals($fileStats['highestSeverity'], $fw->highestSeverity());
-            $this->assertEquals($fileStats['stats'], $fw->stats());
+            $this->tester->assertEquals($filePath, $fw->filePath());
+            $this->tester->assertEquals($fileStats['numOfErrors'], $fw->numOfErrors());
+            $this->tester->assertEquals($fileStats['numOfWarnings'], $fw->numOfWarnings());
+            $this->tester->assertEquals($fileStats['highestSeverity'], $fw->highestSeverity());
+            $this->tester->assertEquals($fileStats['stats'], $fw->stats());
 
             /**
              * @var int $i
@@ -175,11 +174,11 @@ class JsonReportWrapperTest extends \Codeception\Test\Unit
              */
             foreach ($fw->yieldFailures() as $i => $failureWrapper) {
                 $failure = $report[$filePath][$i];
-                $this->assertEquals($failure['severity'], $failureWrapper->severity());
-                $this->assertEquals($failure['source'], $failureWrapper->source());
-                $this->assertEquals($failure['line'], $failureWrapper->line());
-                $this->assertEquals($failure['column'], $failureWrapper->column());
-                $this->assertEquals($failure['message'], $failureWrapper->message());
+                $this->tester->assertEquals($failure['severity'], $failureWrapper->severity());
+                $this->tester->assertEquals($failure['source'], $failureWrapper->source());
+                $this->tester->assertEquals($failure['line'], $failureWrapper->line());
+                $this->tester->assertEquals($failure['column'], $failureWrapper->column());
+                $this->tester->assertEquals($failure['message'], $failureWrapper->message());
             }
         }
     }

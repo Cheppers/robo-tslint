@@ -1,23 +1,15 @@
 <?php
 
+namespace Cheppers\Robo\TsLint\Test\Task;
+
 use Cheppers\AssetJar\AssetJar;
 use Cheppers\Robo\TsLint\Task\Run as RunTask;
 use Codeception\Util\Stub;
 use Helper\Dummy\Process as DummyProcess;
 use Robo\Robo;
 
-/**
- * Class TaskTsLintRunTest.
- */
-// @codingStandardsIgnoreStart
 class RunTest extends \Codeception\Test\Unit
 {
-    // @codingStandardsIgnoreEnd
-
-    use \Cheppers\Robo\TsLint\Task\LoadTasks;
-    use \Robo\TaskAccessor;
-    use \Robo\Common\BuilderAwareTrait;
-
     /**
      * @param $name
      *
@@ -25,7 +17,7 @@ class RunTest extends \Codeception\Test\Unit
      */
     protected static function getMethod($name)
     {
-        $class = new ReflectionClass(RunTask::class);
+        $class = new \ReflectionClass(RunTask::class);
         $method = $class->getMethod($name);
         $method->setAccessible(true);
 
@@ -33,25 +25,18 @@ class RunTest extends \Codeception\Test\Unit
     }
 
     /**
-     * @var \League\Container\Container
+     * @var \UnitTester
      */
-    protected $container = null;
-
-    // @codingStandardsIgnoreStart
-    protected function _before()
-    {
-        // @codingStandardsIgnoreEnd
-        $this->container = new \League\Container\Container();
-        Robo::setContainer($this->container);
-        Robo::configureContainer($this->container);
-    }
+    protected $tester;
 
     /**
-     * @return \League\Container\Container
+     * {@inheritdoc}
      */
-    public function getContainer()
+    protected function setUp()
     {
-        return $this->container;
+        parent::setUp();
+
+        \Helper\Dummy\Process::reset();
     }
 
     public function testGetSetLintReporters()
@@ -371,85 +356,102 @@ class RunTest extends \Codeception\Test\Unit
      */
     public function casesRun()
     {
-        return [
-            'withoutJar - success' => [
-                0,
-                [],
-                false,
-            ],
-            'withoutJar - warning' => [
-                1,
-                [
-                    'a.ts' => [
-                        [
-                            'severity' => 'warning',
-                        ],
-                    ],
-                ],
-                false,
-            ],
-            'withoutJar - error' => [
-                2,
-                [
-                    'a.ts' => [
-                        [
-                            'severity' => 'error',
-                        ],
-                    ]
-                ],
-                false,
-            ],
-            'withJar - success' => [
-                0,
-                [],
-                true,
-            ],
-            'withJar - warning' => [
-                1,
-                [
-                    'a.ts' => [
-                        [
-                            'severity' => 'warning',
-                        ],
-                    ],
-                ],
-                true,
-            ],
-            'withJar - error' => [
-                2,
-                [
-                    'a.ts' => [
-                        [
-                            'severity' => 'error',
-                        ],
-                    ],
-                ],
-                true,
-            ],
+        $reportBase = [];
+
+        $messageWarning = [
+            'line' => 1,
+            'column' => 2,
+            'length' => 3,
+            'severity' => 'warning',
+            'reason' => 'R1',
+            'linter' => 'S1',
         ];
+
+        $messageError = [
+            'line' => 3,
+            'column' => 4,
+            'length' => 5,
+            'severity' => 'error',
+            'reason' => 'R2',
+            'linter' => 'S2',
+        ];
+
+        $label_pattern = '%d; failOn: %s; E: %d; W: %d; exitCode: %d; withJar: %s;';
+        $cases = [];
+
+        $combinations = [
+            ['e' => true, 'w' => true, 'f' => 'never', 'c' => 0],
+            ['e' => true, 'w' => false, 'f' => 'never', 'c' => 0],
+            ['e' => false, 'w' => true, 'f' => 'never', 'c' => 0],
+            ['e' => false, 'w' => false, 'f' => 'never', 'c' => 0],
+
+            ['e' => true, 'w' => true, 'f' => 'warning', 'c' => 2],
+            ['e' => true, 'w' => false, 'f' => 'warning', 'c' => 2],
+            ['e' => false, 'w' => true, 'f' => 'warning', 'c' => 1],
+            ['e' => false, 'w' => false, 'f' => 'warning', 'c' => 0],
+
+            ['e' => true, 'w' => true, 'f' => 'error', 'c' => 2],
+            ['e' => true, 'w' => false, 'f' => 'error', 'c' => 2],
+            ['e' => false, 'w' => true, 'f' => 'error', 'c' => 0],
+            ['e' => false, 'w' => false, 'f' => 'error', 'c' => 0],
+        ];
+
+        $i = 0;
+        foreach ([true, false] as $withJar) {
+            $withJarStr = $withJar ? 'true' : 'false';
+            foreach ($combinations as $c) {
+                $i++;
+                $report = $reportBase;
+
+                if ($c['e']) {
+                    $report['a.ts'][] = $messageError;
+                }
+
+                if ($c['w']) {
+                    $report['a.ts'][] = $messageWarning;
+                }
+
+                $label = sprintf($label_pattern, $i, $c['f'], $c['e'], $c['w'], $c['c'], $withJarStr);
+                $cases[$label] = [
+                    $c['c'],
+                    [
+                        'failOn' => $c['f'],
+                    ],
+                    $withJar,
+                    json_encode($report)
+                ];
+            }
+        }
+
+        return $cases;
     }
 
     /**
      * This way cannot be tested those cases when the lint process failed.
      *
-     * @dataProvider casesRun
-     *
-     * @param int $expectedExitCode
-     * @param array $expectedReport
+     * @param int $exitCode
+     * @param array $options
      * @param bool $withJar
+     * @param string $expectedStdOutput
+     *
+     * @dataProvider casesRun
      */
-    public function testRun($expectedExitCode, array $expectedReport, $withJar)
+    public function testRun($exitCode, array $options, $withJar, $expectedStdOutput)
     {
-        $options = [
+        $container = \Robo\Robo::createDefaultContainer();
+        \Robo\Robo::setContainer($container);
+
+        $mainStdOutput = new \Helper\Dummy\Output();
+
+        $options += [
             'workingDirectory' => 'my-working-dir',
             'assetJarMapping' => ['report' => ['tsLintRun', 'report']],
             'format' => 'yaml',
-            'failOn' => 'warning',
             'convertFormatTo' => 'yaml2jsonGroupByFiles',
         ];
 
-        /** @var RunTask $runTask */
-        $runTask = Stub::construct(
+        /** @var \Cheppers\Robo\TsLint\Task\Run $task */
+        $task = Stub::construct(
             RunTask::class,
             [$options, []],
             [
@@ -457,39 +459,48 @@ class RunTest extends \Codeception\Test\Unit
             ]
         );
 
-        $output = new \Helper\Dummy\Output();
-        DummyProcess::$exitCode = $expectedExitCode;
-        DummyProcess::$stdOutput = json_encode($expectedReport);
+        $processIndex = count(\Helper\Dummy\Process::$instances);
 
-        $runTask->setLogger($this->container->get('logger'));
-        $runTask->setOutput($output);
+        \Helper\Dummy\Process::$prophecy[$processIndex] = [
+            'exitCode' => $exitCode,
+            'stdOutput' => $expectedStdOutput,
+        ];
+
+        $task->setLogger($container->get('logger'));
+        $task->setOutput($mainStdOutput);
+
         $assetJar = null;
         if ($withJar) {
             $assetJar = new AssetJar();
-            $runTask->setAssetJar($assetJar);
+            $task->setAssetJar($assetJar);
         }
 
-        $result = $runTask->run();
+        $result = $task->run();
 
-        static::assertEquals($expectedExitCode, $result->getExitCode(), 'Exit code');
-        static::assertEquals(
+        $this->tester->assertEquals(
+            $exitCode,
+            $result->getExitCode(),
+            'Exit code'
+        );
+
+        $this->tester->assertEquals(
             $options['workingDirectory'],
-            DummyProcess::$instance->getWorkingDirectory(),
+            \Helper\Dummy\Process::$instances[$processIndex]->getWorkingDirectory(),
             'Working directory'
         );
 
         if ($withJar) {
             /** @var \Cheppers\LintReport\ReportWrapperInterface $reportWrapper */
             $reportWrapper = $assetJar->getValue(['tsLintRun', 'report']);
-            static::assertEquals(
-                $expectedReport,
+            $this->tester->assertEquals(
+                json_decode($expectedStdOutput, true),
                 $reportWrapper->getReport(),
                 'Output equals with jar'
             );
         } else {
-            static::assertEquals(
-                $expectedReport,
-                json_decode($output->output, true),
+            $this->tester->assertContains(
+                $expectedStdOutput,
+                $mainStdOutput->output,
                 'Output equals without jar'
             );
         }
@@ -497,6 +508,9 @@ class RunTest extends \Codeception\Test\Unit
 
     public function testRunFailed()
     {
+        $container = \Robo\Robo::createDefaultContainer();
+        \Robo\Robo::setContainer($container);
+
         $exitCode = 1;
         $expectedReport = [
             'a.ts' => [
@@ -523,24 +537,28 @@ class RunTest extends \Codeception\Test\Unit
             ]
         );
 
-        DummyProcess::$exitCode = $exitCode;
-        DummyProcess::$stdOutput = $expectedReportJson;
+        $processIndex = count(\Helper\Dummy\Process::$instances);
+
+        \Helper\Dummy\Process::$prophecy[$processIndex] = [
+            'exitCode' => $exitCode,
+            'stdOutput' => $expectedReportJson,
+        ];
 
         $task->setConfig(Robo::config());
-        $task->setLogger($this->container->get('logger'));
+        $task->setLogger($container->get('logger'));
         $assetJar = new AssetJar();
         $task->setAssetJar($assetJar);
 
         $result = $task->run();
 
-        static::assertEquals($exitCode, $result->getExitCode());
-        static::assertEquals(
+        $this->tester->assertEquals($exitCode, $result->getExitCode());
+        $this->tester->assertEquals(
             $options['workingDirectory'],
-            DummyProcess::$instance->getWorkingDirectory()
+            \Helper\Dummy\Process::$instances[$processIndex]->getWorkingDirectory()
         );
 
         /** @var \Cheppers\LintReport\ReportWrapperInterface $reportWrapper */
         $reportWrapper = $assetJar->getValue(['tsLintRun', 'report']);
-        static::assertEquals($expectedReport, $reportWrapper->getReport());
+        $this->tester->assertEquals($expectedReport, $reportWrapper->getReport());
     }
 }
