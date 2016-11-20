@@ -11,8 +11,6 @@ use Cheppers\Robo\TsLint\LintReportWrapper\Yaml\ReportWrapper as YamlReportWrapp
 use League\Container\ContainerAwareInterface;
 use League\Container\ContainerAwareTrait;
 use PackageVersions\Versions;
-use Robo\Common\BuilderAwareTrait;
-use Robo\Common\IO;
 use Robo\Common\OutputAwareTrait;
 use Robo\Contract\BuilderAwareInterface;
 use Robo\Contract\OutputAwareInterface;
