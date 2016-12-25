@@ -14,10 +14,10 @@
         "samsonasik/package-versions": "^1.1"
     },
     "require-dev": {
-        "cheppers/git-hooks": "^0.0.8",
-        "cheppers/lint-report": "^0.0.4",
-        "cheppers/robo-git": "^0.0.2",
-        "cheppers/robo-phpcs": "^0.0.10",
+        "cheppers/git-hooks": "^0.0",
+        "cheppers/lint-report": "^0.0",
+        "cheppers/robo-git": "^0.0",
+        "cheppers/robo-phpcs": "^0.0",
         "codeception/codeception": "^2.2",
         "symfony/process": "^2.8||^3.1",
         "symfony/yaml": "^2.8||^3.1"
