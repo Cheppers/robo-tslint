@@ -541,7 +541,13 @@ class Run extends BaseTask implements
     public function run()
     {
         $command = $this->buildCommand();
-        $this->printTaskInfo(sprintf('TsLint task runs: <info>%s</info>', $command));
+        $this->printTaskInfo(
+            'TsLint task runs: <info>{command}</info> in directory "<info>{workingDirectory}</info>"',
+            [
+                'command' => $command,
+                'workingDirectory' => $this->workingDirectory ?: '.',
+            ]
+        );
 
         $lintReporters = $this->initLintReporters();
         if ($lintReporters && !$this->isOutputFormatMachineReadable()) {
