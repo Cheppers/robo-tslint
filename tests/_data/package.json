@@ -11,9 +11,8 @@
     "url": "/dev/null"
   },
   "devDependencies": {
-    "tslint": "^3.14.0",
-    "tslint-formatters": "^0.1.3",
-    "typescript": "^1.8.10"
+    "tslint": "^4.2",
+    "typescript": "^2.1"
   },
   "scripts": {
     "test": "true"

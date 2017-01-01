@@ -1,23 +1,18 @@
 <?php
 
-namespace Cheppers\Robo\TsLint\Test\LintReportWrapper\Json;
+namespace Cheppers\Robo\TsLint\Test\Unit\LintReportWrapper;
 
-use Cheppers\Robo\TsLint\LintReportWrapper\Json\ReportWrapper;
+use Cheppers\Robo\TsLint\LintReportWrapper\ReportWrapper;
+use Codeception\Test\Unit;
 
-/**
- * Class ReportWrapperTest.
- */
-class ReportWrapperTest extends \Codeception\Test\Unit
+class ReportWrapperTest extends Unit
 {
     /**
      * @var \UnitTester
      */
     protected $tester;
 
-    /**
-     * @return array
-     */
-    public function casesReports()
+    public function casesReports(): array
     {
         return [
             'ok:no-files' => [
@@ -30,33 +25,6 @@ class ReportWrapperTest extends \Codeception\Test\Unit
                 'report' => [],
                 'filesStats' => [],
             ],
-            'ok:one-file' => [
-                'expected' => [
-                    'countFiles' => 1,
-                    'numOfErrors' => 0,
-                    'numOfWarnings' => 0,
-                    'highestSeverity' => 'ok',
-                ],
-                'report' => [
-                    'a.ts' => [],
-                ],
-                'filesStats' => [
-                    'a.ts' => [
-                        'numOfErrors' => 0,
-                        'numOfWarnings' => 0,
-                        'highestSeverity' => 'ok',
-                        'stats' => [
-                            'severity' => 'ok',
-                            'has' => [
-                                'ok' => false,
-                                'warning' => false,
-                                'error' => false,
-                            ],
-                            'source' => [],
-                        ],
-                    ],
-                ],
-            ],
             'warning:one-file' => [
                 'expected' => [
                     'countFiles' => 1,
@@ -65,14 +33,21 @@ class ReportWrapperTest extends \Codeception\Test\Unit
                     'highestSeverity' => 'warning',
                 ],
                 'report' => [
-                    'a.ts' => [
-                        [
-                            'severity' => 'warning',
-                            'source' => 's1',
+                    [
+                        'name' => 'a.ts',
+                        'severity' => 'warning',
+                        'ruleName' => 'r1',
+                        'failure' => 'f1',
+                        'startPosition' => [
                             'line' => 1,
-                            'column' => 2,
-                            'message' => 'm1',
-                        ]
+                            'character' => 2,
+                            'position' => 3,
+                        ],
+                        'endPosition' => [
+                            'line' => 4,
+                            'character' => 5,
+                            'position' => 6,
+                        ],
                     ],
                 ],
                 'filesStats' => [
@@ -88,7 +63,7 @@ class ReportWrapperTest extends \Codeception\Test\Unit
                                 'error' => false,
                             ],
                             'source' => [
-                                's1' => [
+                                'r1' => [
                                     'severity' => 'warning',
                                     'count' => 1,
                                 ],
@@ -105,14 +80,21 @@ class ReportWrapperTest extends \Codeception\Test\Unit
                     'highestSeverity' => 'error',
                 ],
                 'report' => [
-                    'a.ts' => [
-                        [
-                            'severity' => 'error',
-                            'source' => 's1',
+                    [
+                        'name' => 'a.ts',
+                        'severity' => 'error',
+                        'ruleName' => 'r1',
+                        'failure' => 'f1',
+                        'startPosition' => [
                             'line' => 1,
-                            'column' => 2,
-                            'message' => 'm1',
-                        ]
+                            'character' => 2,
+                            'position' => 3,
+                        ],
+                        'endPosition' => [
+                            'line' => 4,
+                            'character' => 5,
+                            'position' => 6,
+                        ],
                     ],
                 ],
                 'filesStats' => [
@@ -128,7 +110,7 @@ class ReportWrapperTest extends \Codeception\Test\Unit
                                 'error' => true,
                             ],
                             'source' => [
-                                's1' => [
+                                'r1' => [
                                     'severity' => 'error',
                                     'count' => 1,
                                 ],
@@ -142,12 +124,8 @@ class ReportWrapperTest extends \Codeception\Test\Unit
 
     /**
      * @dataProvider casesReports
-     *
-     * @param array $expected
-     * @param array $report
-     * @param array $filesStats
      */
-    public function testAll(array $expected, array $report, array $filesStats)
+    public function testAll(array $expected, array $report, array $filesStats): void
     {
         $rw = new ReportWrapper($report);
 
@@ -158,7 +136,7 @@ class ReportWrapperTest extends \Codeception\Test\Unit
 
         /**
          * @var string $filePath
-         * @var \Cheppers\Robo\TsLint\LintReportWrapper\Json\FileWrapper $fw
+         * @var \Cheppers\Robo\TsLint\LintReportWrapper\FileWrapper $fw
          */
         foreach ($rw->yieldFiles() as $filePath => $fw) {
             $fileStats = $filesStats[$filePath];
@@ -167,19 +145,6 @@ class ReportWrapperTest extends \Codeception\Test\Unit
             $this->tester->assertEquals($fileStats['numOfWarnings'], $fw->numOfWarnings());
             $this->tester->assertEquals($fileStats['highestSeverity'], $fw->highestSeverity());
             $this->tester->assertEquals($fileStats['stats'], $fw->stats());
-
-            /**
-             * @var int $i
-             * @var \Cheppers\LintReport\FailureWrapperInterface $failureWrapper
-             */
-            foreach ($fw->yieldFailures() as $i => $failureWrapper) {
-                $failure = $report[$filePath][$i];
-                $this->tester->assertEquals($failure['severity'], $failureWrapper->severity());
-                $this->tester->assertEquals($failure['source'], $failureWrapper->source());
-                $this->tester->assertEquals($failure['line'], $failureWrapper->line());
-                $this->tester->assertEquals($failure['column'], $failureWrapper->column());
-                $this->tester->assertEquals($failure['message'], $failureWrapper->message());
-            }
         }
     }
 }

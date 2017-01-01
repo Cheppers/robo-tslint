@@ -1,14 +1,9 @@
 <?php
 
-namespace Cheppers\Robo\TsLint\LintReportWrapper\Json;
+namespace Cheppers\Robo\TsLint\LintReportWrapper;
 
 use Cheppers\LintReport\ReportWrapperInterface;
 
-/**
- * Class ReportWrapper.
- *
- * @package Cheppers\LintReport\Wrapper\TSLintJson
- */
 class ReportWrapper implements ReportWrapperInterface
 {
     /**
@@ -22,14 +17,14 @@ class ReportWrapper implements ReportWrapperInterface
     protected $reportInternal = [];
 
     /**
-     * @var int|null
+     * @var int
      */
-    protected $numOfErrors = null;
+    protected $numOfErrors = 0;
 
     /**
-     * @var int|null
+     * @var int
      */
-    protected $numOfWarnings = null;
+    protected $numOfWarnings = 0;
 
     /**
      * {@inheritdoc}
@@ -42,17 +37,15 @@ class ReportWrapper implements ReportWrapperInterface
     }
 
     /**
-     * @return array
+     * {@inheritdoc}
      */
-    public function getReport()
+    public function getReport(): array
     {
         return $this->report;
     }
 
     /**
-     * @param array $report
-     *
-     * @return $this
+     * {@inheritdoc}
      */
     public function setReport($report)
     {
@@ -61,23 +54,27 @@ class ReportWrapper implements ReportWrapperInterface
         $this->numOfErrors = 0;
         $this->numOfWarnings = 0;
 
-        foreach ($report as $filePath => $failures) {
-            $this->reportInternal[$filePath] = [
-                'filePath' => $filePath,
-                'errors' => 0,
-                'warnings' => 0,
-                'stats' => [],
-                'failures' => $failures,
-            ];
+        foreach ($report as $failure) {
+            $failure += ['severity' => 'error'];
+            $filePath = $failure['name'];
+            if (!isset($this->reportInternal[$filePath])) {
+                $this->reportInternal[$filePath] = [
+                    'filePath' => $filePath,
+                    'errors' => 0,
+                    'warnings' => 0,
+                    'stats' => [],
+                    'failures' => [],
+                ];
+            }
 
-            foreach ($failures as $failure) {
-                if ($failure['severity'] === 'error') {
-                    $this->reportInternal[$filePath]['errors']++;
-                    $this->numOfErrors++;
-                } elseif ($failure['severity'] === 'warning') {
-                    $this->reportInternal[$filePath]['warnings']++;
-                    $this->numOfWarnings++;
-                }
+            $this->reportInternal[$filePath]['failures'][] = $failure;
+
+            if ($failure['severity'] === 'error') {
+                $this->reportInternal[$filePath]['errors']++;
+                $this->numOfErrors++;
+            } elseif ($failure['severity'] === 'warning') {
+                $this->reportInternal[$filePath]['warnings']++;
+                $this->numOfWarnings++;
             }
         }
 
@@ -103,9 +100,9 @@ class ReportWrapper implements ReportWrapperInterface
     }
 
     /**
-     * @return string
+     * {@inheritdoc}
      */
-    public function highestSeverity()
+    public function highestSeverity(): string
     {
         if ($this->numOfErrors()) {
             return ReportWrapperInterface::SEVERITY_ERROR;
@@ -121,7 +118,7 @@ class ReportWrapper implements ReportWrapperInterface
     /**
      * {@inheritdoc}
      */
-    public function numOfErrors()
+    public function numOfErrors(): int
     {
         return $this->numOfErrors;
     }
@@ -129,7 +126,7 @@ class ReportWrapper implements ReportWrapperInterface
     /**
      * {@inheritdoc}
      */
-    public function numOfWarnings()
+    public function numOfWarnings(): int
     {
         return $this->numOfWarnings;
     }

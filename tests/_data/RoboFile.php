@@ -42,8 +42,8 @@ class RoboFile extends \Robo\Tasks
     {
         return $this
             ->taskTsLintRun()
-            ->paths(['samples/*'])
-            ->format('stylish');
+            ->setPaths(['samples/*'])
+            ->setFormat('stylish');
     }
 
     /**
@@ -53,9 +53,9 @@ class RoboFile extends \Robo\Tasks
     {
         return $this
             ->taskTsLintRun()
-            ->paths(['samples/*'])
-            ->format('stylish')
-            ->out("{$this->reportsDir}/native.stylish.txt");
+            ->setPaths(['samples/*'])
+            ->setFormat('stylish')
+            ->setOut("{$this->reportsDir}/native.stylish.txt");
     }
 
     /**
@@ -74,10 +74,9 @@ class RoboFile extends \Robo\Tasks
             ->setDestination("{$this->reportsDir}/extra.summary.txt");
 
         return $this->taskTsLintRun()
-            ->paths(['samples/*'])
-            ->format('yaml')
-            ->convertFormatTo('yaml2jsonGroupByFiles')
-            ->failOn('warning')
+            ->setPaths(['samples/*'])
+            ->setFormat('json')
+            ->setFailOn('warning')
             ->addLintReporter('verbose:StdOutput', 'lintVerboseReporter')
             ->addLintReporter('verbose:file', $verboseFile)
             ->addLintReporter('summary:StdOutput', 'lintSummaryReporter')

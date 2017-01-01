@@ -1,14 +1,10 @@
 <?php
 
-namespace Cheppers\Robo\TsLint\LintReportWrapper\Yaml;
+namespace Cheppers\Robo\TsLint\LintReportWrapper;
 
 use Cheppers\LintReport\FailureWrapperInterface;
+use Cheppers\LintReport\ReportWrapperInterface;
 
-/**
- * Class FileWrapper.
- *
- * @package Cheppers\LintReport\Wrapper\TSLintYaml
- */
 class FailureWrapper implements FailureWrapperInterface
 {
     /**
@@ -23,59 +19,59 @@ class FailureWrapper implements FailureWrapperInterface
     {
         // @todo Validate.
         $this->failure = $failure + [
+            'severity' => ReportWrapperInterface::SEVERITY_OK,
             'failure' => '',
-            'severity' => 'error',
             'name' => '',
             'ruleName' => '',
             'startPosition' => [
-                'line' => 0,
                 'character' => 0,
+                'line' => 0,
                 'position' => 0,
             ],
             'endPosition' => [
-                'line' => 0,
                 'character' => 0,
+                'line' => 0,
                 'position' => 0,
             ],
         ];
     }
 
     /**
-     * @return string
+     * {@inheritdoc}
      */
-    public function severity()
+    public function severity(): string
     {
         return $this->failure['severity'];
     }
 
     /**
-     * @return string
+     * {@inheritdoc}
      */
-    public function source()
+    public function source(): string
     {
         return $this->failure['ruleName'];
     }
 
     /**
-     * @return int
+     * {@inheritdoc}
      */
-    public function line()
+    public function line(): int
     {
         return $this->failure['startPosition']['line'];
     }
 
     /**
-     * @return int
+     * {@inheritdoc}
      */
-    public function column()
+    public function column(): int
     {
         return $this->failure['startPosition']['character'];
     }
 
     /**
-     * @return string
+     * {@inheritdoc}
      */
-    public function message()
+    public function message(): string
     {
         return $this->failure['failure'];
     }
