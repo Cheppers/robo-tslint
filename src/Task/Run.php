@@ -6,13 +6,12 @@ use Cheppers\AssetJar\AssetJarAware;
 use Cheppers\AssetJar\AssetJarAwareInterface;
 use Cheppers\LintReport\ReporterInterface;
 use Cheppers\LintReport\ReportWrapperInterface;
-use Cheppers\Robo\TsLint\LintReportWrapper\Json\ReportWrapper as JsonReportWrapper;
-use Cheppers\Robo\TsLint\LintReportWrapper\Yaml\ReportWrapper as YamlReportWrapper;
+use Cheppers\Robo\TsLint\LintReportWrapper\ReportWrapper;
 use League\Container\ContainerAwareInterface;
 use League\Container\ContainerAwareTrait;
-use PackageVersions\Versions;
 use Robo\Common\OutputAwareTrait;
 use Robo\Contract\BuilderAwareInterface;
+use Robo\Contract\CommandInterface;
 use Robo\Contract\OutputAwareInterface;
 use Robo\Result;
 use Robo\Task\BaseTask;
@@ -20,7 +19,6 @@ use Robo\Task\Filesystem\loadTasks as FsLoadTasks;
 use Robo\Task\Filesystem\loadShortcuts as FsShortCuts;
 use Robo\TaskAccessor;
 use Symfony\Component\Process\Process;
-use Symfony\Component\Yaml\Yaml;
 
 /**
  * Class TaskTsLintRun.
@@ -32,6 +30,7 @@ use Symfony\Component\Yaml\Yaml;
  */
 class Run extends BaseTask implements
     AssetJarAwareInterface,
+    CommandInterface,
     ContainerAwareInterface,
     BuilderAwareInterface,
     OutputAwareInterface
@@ -71,233 +70,64 @@ class Run extends BaseTask implements
      */
     protected $processClass = Process::class;
 
+    //region Options.
+    //region Option - workingDirectory.
+    /**
+     * @var string
+     */
+    protected $workingDirectory = '';
+
+    public function getWorkingDirectory(): string
+    {
+        return $this->workingDirectory;
+    }
+
+    /**
+     * Directory to step in before run the `tslint`.
+     *
+     * @return $this
+     */
+    public function setWorkingDirectory(string $value)
+    {
+        $this->workingDirectory = $value;
+
+        return $this;
+    }
+    //endregion
+
+    //region Option - tslintExecutable.
     /**
      * @var string
      */
     protected $tslintExecutable = 'node_modules/.bin/tslint';
 
-    /**
-     * Directory to step in before run the `tslint`.
-     *
-     * @var string
-     */
-    protected $workingDirectory = '';
+    public function getTslintExecutable(): string
+    {
+        return $this->tslintExecutable;
+    }
 
+    /**
+     * @return $this
+     */
+    public function setTslintExecutable(string $tslintExecutable)
+    {
+        $this->tslintExecutable = $tslintExecutable;
+
+        return $this;
+    }
+    //endregion
+
+    //region Option - failOn.
     /**
      * Severity level.
      *
-     * @var bool
+     * @var string
      */
     protected $failOn = 'error';
 
-    /**
-     * The location of the configuration file.
-     *
-     * @var string
-     */
-    protected $configFile = null;
-
-    /**
-     * A filename or glob which indicates files to exclude from linting.
-     *
-     * @var array
-     */
-    protected $exclude = [];
-
-    /**
-     * Return status code 0 even if there are any lint errors.
-     *
-     * @var string
-     */
-    protected $force = '';
-
-    /**
-     * A filename to output the results to.
-     *
-     * By default, tslint outputs to stdout, which is usually the console where
-     * you're running it from.
-     *
-     * @var string
-     */
-    protected $out = '';
-
-    /**
-     *  An additional rules directory, for user-created rules.
-     *
-     * @var string
-     */
-    protected $rulesDir = '';
-
-    /**
-     * An additional formatters directory, for user-created formatters.
-     *
-     * @var string
-     */
-    protected $formattersDir = '';
-
-    /**
-     * The formatter to use to format the results.
-     *
-     * @var string
-     */
-    protected $format = '';
-
-    /**
-     * @var \Cheppers\LintReport\ReporterInterface[]
-     */
-    protected $lintReporters = [];
-
-    /**
-     * The location of a tsconfig.json file that will be used to determine which files will be linted.
-     *
-     * @var string
-     */
-    protected $project = '';
-
-    /**
-     * Enables the type checker when running linting rules.
-     *
-     * The --project must be specified in order to enable type checking.
-     *
-     * @var bool|null
-     */
-    protected $typeCheck = null;
-
-    /**
-     * TypeScript files to check.
-     *
-     * @var array
-     */
-    protected $paths = [];
-
-    /**
-     * @var string
-     */
-    protected $convertFormatTo = '';
-
-    /**
-     * Process exit code.
-     *
-     * @var int
-     */
-    protected $exitCode = 0;
-
-    /**
-     * Exit code and error message mapping.
-     *
-     * @var string
-     */
-    protected $exitMessages = [
-        0 => 'No lints were found',
-        1 => 'Lints with a severity of warning were reported (no errors)',
-        2 => 'One or more errors were reported (and any number of warnings)',
-        3 => 'Extra lint reporters can be used only if the output format is "json".',
-    ];
-
-    /**
-     * TaskTsLintRun constructor.
-     *
-     * @param array $options
-     *   Key-value pairs of options.
-     * @param array $paths
-     *   File paths.
-     */
-    public function __construct(array $options = [], array $paths = [])
+    public function getFailOn(): string
     {
-        $this->options($options);
-        $this->paths($paths);
-    }
-
-    /**
-     * All in one configuration.
-     *
-     * @param array $options
-     *   Options.
-     *
-     * @return $this
-     */
-    public function options(array $options)
-    {
-        foreach ($options as $name => $value) {
-            switch ($name) {
-                case 'assetJarMapping':
-                    $this->setAssetJarMapping($value);
-                    break;
-
-                case 'workingDirectory':
-                    $this->workingDirectory($value);
-                    break;
-
-                case 'failOn':
-                    $this->failOn($value);
-                    break;
-
-                case 'configFile':
-                    $this->configFile($value);
-                    break;
-
-                case 'exclude':
-                    $this->exclude($value);
-                    break;
-
-                case 'force':
-                    $this->force($value);
-                    break;
-
-                case 'out':
-                    $this->out($value);
-                    break;
-
-                case 'rulesDir':
-                    $this->rulesDir($value);
-                    break;
-
-                case 'formattersDir':
-                    $this->formattersDir($value);
-                    break;
-
-                case 'format':
-                    $this->format($value);
-                    break;
-
-                case 'lintReporters':
-                    $this->setLintReporters($value);
-                    break;
-
-                case 'project':
-                    $this->project($value);
-                    break;
-
-                case 'typeCheck':
-                    $this->typeCheck($value);
-                    break;
-
-                case 'paths':
-                    $this->paths($value);
-                    break;
-
-                case 'convertFormatTo':
-                    $this->convertFormatTo($value);
-                    break;
-            }
-        }
-
-        return $this;
-    }
-
-    /**
-     * Set the current working directory.
-     *
-     * @param string $value
-     *   Directory path.
-     *
-     * @return $this
-     */
-    public function workingDirectory($value)
-    {
-        $this->workingDirectory = $value;
-
-        return $this;
+        return $this->failOn;
     }
 
     /**
@@ -308,26 +138,49 @@ class Run extends BaseTask implements
      *
      * @return $this
      */
-    public function failOn($value)
+    public function setFailOn(string $value)
     {
         $this->failOn = $value;
 
         return $this;
     }
+    //endregion
+
+    //region Option - configFile.
+    /**
+     * @var string
+     */
+    protected $configFile = '';
+
+    public function getConfigFile(): string
+    {
+        return $this->configFile;
+    }
 
     /**
      * Specify which configuration file you want to use.
      *
-     * @param string $path
-     *   File path.
-     *
      * @return $this
      */
-    public function configFile($path)
+    public function setConfigFile(string $path)
     {
         $this->configFile = $path;
 
         return $this;
+    }
+    //endregion
+
+    //region Option - exclude.
+    /**
+     * A filename or glob which indicates files to exclude from linting.
+     *
+     * @var array
+     */
+    protected $exclude = [];
+
+    public function getExclude(): array
+    {
+        return $this->exclude;
     }
 
     /**
@@ -340,80 +193,228 @@ class Run extends BaseTask implements
      *
      * @return $this
      */
-    public function exclude($file_paths, $include = true)
+    public function setExclude($file_paths, $include = true)
     {
         $this->exclude = $this->createIncludeList($file_paths, $include) + $this->exclude;
 
         return $this;
     }
+    //endregion
+
+    //region Option - force.
+    /**
+     * Return status code 0 even if there are any lint errors.
+     *
+     * @var bool
+     */
+    protected $force = false;
+
+    public function getForce(): bool
+    {
+        return $this->force;
+    }
 
     /**
-     * @param bool $value
-     *
      * @return $this
      */
-    public function force($value)
+    public function setForce(bool $value)
     {
         $this->force = $value;
 
         return $this;
     }
+    //endregion
+
+    //region Option - out.
+    /**
+     * A filename to output the results to.
+     *
+     * By default, tslint outputs to stdout, which is usually the console where
+     * you're running it from.
+     *
+     * @var string
+     */
+    protected $out = '';
+
+    public function getOut(): string
+    {
+        return $this->out;
+    }
 
     /**
      * Write output to a file instead of STDOUT.
      *
-     * @param string|null $file_path
-     *
      * @return $this
      */
-    public function out($file_path)
+    public function setOut(string $filePath)
     {
-        $this->out = $file_path;
+        $this->out = $filePath;
 
         return $this;
     }
+    //endregion
+
+    //region Option - rulesDir.
+    /**
+     * @var string
+     */
+    protected $rulesDir = '';
+
+    public function getRulesDir(): string
+    {
+        return $this->rulesDir;
+    }
 
     /**
-     * @param string $value
+     * An additional rules directory, for user-created rules.
      *
      * @return $this
      */
-    public function rulesDir($value)
+    public function setRulesDir(string $value)
     {
         $this->rulesDir = $value;
 
         return $this;
     }
+    //endregion
+
+    //region Option - formattersDir.
+    /**
+     * An additional formatters directory, for user-created formatters.
+     *
+     * @var string
+     */
+    protected $formattersDir = '';
+
+    public function getFormattersDir(): string
+    {
+        return $this->formattersDir;
+    }
 
     /**
-     * @param string $value
-     *
      * @return $this
      */
-    public function formattersDir($value)
+    public function setFormattersDir(string $directory)
     {
-        $this->formattersDir = $value;
+        $this->formattersDir = $directory;
 
         return $this;
+    }
+    //endregion
+
+    //region Option - format.
+    /**
+     * The formatter to use to format the results.
+     *
+     * @var string
+     */
+    protected $format = '';
+
+    public function getFormat(): string
+    {
+        return $this->format;
     }
 
     /**
      * Specify how to display lints.
      *
-     * @param string $value
-     *   Formatter identifier.
-     *
      * @return $this
      */
-    public function format($value)
+    public function setFormat(string $value)
     {
         $this->format = $value;
 
         return $this;
     }
+    //endregion
+
+    //region Option - project.
+    /**
+     * @var string
+     */
+    protected $project = '';
+
+    public function getProject(): string
+    {
+        return $this->project;
+    }
 
     /**
-     * @return \Cheppers\LintReport\ReporterInterface[]
+     * The location of a tsconfig.json file that will be used to determine which files will be linted.
+     *
+     * @return $this
+     */
+    public function setProject(string $value)
+    {
+        $this->project = $value;
+
+        return $this;
+    }
+    //endregion
+
+    //region Option - typeCheck.
+    /**
+     * @var bool
+     */
+    protected $typeCheck = false;
+
+    public function getTypeCheck(): bool
+    {
+        return $this->typeCheck;
+    }
+
+    /**
+     * Enables the type checker when running linting rules.
+     *
+     * The --project must be specified in order to enable type checking.
+     *
+     * @return $this
+     */
+    public function setTypeCheck(bool $value)
+    {
+        $this->typeCheck = $value;
+
+        return $this;
+    }
+    //endregion
+
+    //region Option - paths.
+    /**
+     * @var array
+     */
+    protected $paths = [];
+
+    public function getPaths(): array
+    {
+        return $this->paths;
+    }
+
+    /**
+     * TypeScript files to check.
+     *
+     * @param string|string[]|bool[] $paths
+     *   Key-value pair of file names and boolean.
+     * @param bool $include
+     *   Exclude or include the files in $paths.
+     *
+     * @return $this
+     */
+    public function setPaths(array $paths, bool $include = true)
+    {
+        $this->paths = $this->createIncludeList($paths, $include) + $this->paths;
+
+        return $this;
+    }
+    //endregion
+
+    //region Option - lintReporters.
+    /**
+     * @var string[]|\Cheppers\LintReport\ReporterInterface[]
+     */
+    protected $lintReporters = [];
+
+    /**
+     * @return string[]|\Cheppers\LintReport\ReporterInterface[]
      */
     public function getLintReporters()
     {
@@ -446,66 +447,132 @@ class Run extends BaseTask implements
     }
 
     /**
-     * @param string $id
-     *
      * @return $this
      */
-    public function removeLintReporter($id)
+    public function removeLintReporter(string $id)
     {
         unset($this->lintReporters[$id]);
 
         return $this;
     }
+    //endregion
+    //endregion
+
+    protected $options = [
+        'config' => 'value',
+        'exclude' => 'multi-value',
+        'force' => 'flag',
+        'out' => 'value',
+        'rules-dir' => 'value',
+        'formatters-dir' => 'value',
+        'format' => 'value',
+        'project' => 'value',
+        'type-check' => 'flag',
+    ];
 
     /**
-     * @param string $value
+     * Process exit code.
      *
-     * @return $this
+     * @var int
      */
-    public function project($value)
-    {
-        $this->project = $value;
+    protected $exitCode = 0;
 
-        return $this;
+    /**
+     * Exit code and error message mapping.
+     *
+     * @var string
+     */
+    protected $exitMessages = [
+        0 => 'No lints were found',
+        1 => 'Lints with a severity of warning were reported (no errors)',
+        2 => 'One or more errors were reported (and any number of warnings)',
+        3 => 'Extra lint reporters can be used only if the output format is "json".',
+    ];
+
+    /**
+     * TaskTsLintRun constructor.
+     *
+     * @param array $options
+     *   Key-value pairs of options.
+     * @param array $paths
+     *   File paths.
+     */
+    public function __construct(array $options = [], array $paths = [])
+    {
+        $this->options($options);
+        $this->setPaths($paths);
     }
 
     /**
-     * @param bool $value
+     * All in one configuration.
      *
      * @return $this
      */
-    public function typeCheck($value)
+    public function options(array $options)
     {
-        $this->typeCheck = $value;
+        foreach ($options as $name => $value) {
+            switch ($name) {
+                case 'assetJarMapping':
+                    $this->setAssetJarMapping($value);
+                    break;
 
-        return $this;
-    }
+                case 'workingDirectory':
+                    $this->setWorkingDirectory($value);
+                    break;
 
-    /**
-     * File paths to lint.
-     *
-     * @param string|string[]|bool[] $paths
-     *   Key-value pair of file names and boolean.
-     * @param bool $include
-     *   Exclude or include the files in $paths.
-     *
-     * @return $this
-     */
-    public function paths(array $paths, $include = true)
-    {
-        $this->paths = $this->createIncludeList($paths, $include) + $this->paths;
+                case 'tslintExecutable':
+                    $this->setTslintExecutable($value);
+                    break;
 
-        return $this;
-    }
+                case 'failOn':
+                    $this->setFailOn($value);
+                    break;
 
-    /**
-     * @param string $value
-     *
-     * @return $this
-     */
-    public function convertFormatTo($value)
-    {
-        $this->convertFormatTo = $value;
+                case 'configFile':
+                    $this->setConfigFile($value);
+                    break;
+
+                case 'exclude':
+                    $this->setExclude($value);
+                    break;
+
+                case 'force':
+                    $this->setForce($value);
+                    break;
+
+                case 'out':
+                    $this->setOut($value);
+                    break;
+
+                case 'rulesDir':
+                    $this->setRulesDir($value);
+                    break;
+
+                case 'formattersDir':
+                    $this->setFormattersDir($value);
+                    break;
+
+                case 'format':
+                    $this->setFormat($value);
+                    break;
+
+                case 'lintReporters':
+                    $this->setLintReporters($value);
+                    break;
+
+                case 'project':
+                    $this->setProject($value);
+                    break;
+
+                case 'typeCheck':
+                    $this->setTypeCheck($value);
+                    break;
+
+                case 'paths':
+                    $this->setPaths($value);
+                    break;
+            }
+        }
 
         return $this;
     }
@@ -521,7 +588,7 @@ class Run extends BaseTask implements
      * @return bool[]
      *   Key is the relevant value, the value is a boolean.
      */
-    protected function createIncludeList($items, $include)
+    protected function createIncludeList($items, $include): array
     {
         if (!is_array($items)) {
             $items = [$items => $include];
@@ -540,7 +607,7 @@ class Run extends BaseTask implements
      */
     public function run()
     {
-        $command = $this->buildCommand();
+        $command = $this->getCommand();
         $this->printTaskInfo(
             'TsLint task runs: <info>{command}</info> in directory "<info>{workingDirectory}</info>"',
             [
@@ -558,18 +625,13 @@ class Run extends BaseTask implements
 
         /** @var Process $process */
         $process = new $this->processClass($command);
-        if ($this->workingDirectory) {
-            $process->setWorkingDirectory($this->workingDirectory);
-        }
 
         $result = $this->prepareOutputDirectory();
         if (!$result->wasSuccessful()) {
             return $result;
         }
 
-        $this->startTimer();
         $this->exitCode = $process->run();
-        $this->stopTimer();
 
         $numOfErrors = $this->exitCode;
         $numOfWarnings = 0;
@@ -610,93 +672,76 @@ class Run extends BaseTask implements
     }
 
     /**
-     * Build the CLI command based on the configuration.
-     *
-     * @return string
-     *   CLI command to execute.
+     * {@inheritdoc}
      */
-    public function buildCommand()
+    public function getCommand(): string
     {
-        $cmd_pattern = '%s';
-        $cmd_args = [
-            escapeshellcmd($this->tslintExecutable),
-        ];
-
-        if ($this->configFile) {
-            $cmd_pattern .= ' --config %s';
-            $cmd_args[] = escapeshellarg($this->configFile);
+        if ($this->getWorkingDirectory()) {
+            $cmdPattern = 'cd %s && ';
+            $cmdArgs = [
+                escapeshellarg($this->getWorkingDirectory()),
+            ];
+        } else {
+            $cmdPattern = '';
+            $cmdArgs = [];
         }
 
-        $exclude = array_keys($this->exclude, true, true);
-        $cmd_pattern .= str_repeat(' --exclude %s', count($exclude));
-        foreach ($exclude as $value) {
-            $cmd_args[] = escapeshellarg($value);
+        $cmdPattern .= '%s';
+        $cmdArgs[] = escapeshellcmd($this->getTslintExecutable());
+
+        $options = $this->buildCommandOptions();
+        foreach ($this->options as $optionName => $optionType) {
+            switch ($optionType) {
+                case 'value':
+                    if ($options[$optionName]) {
+                        $cmdPattern .= " --$optionName %s";
+                        $cmdArgs[] = escapeshellarg($options[$optionName]);
+                    }
+                    break;
+
+                case 'multi-value':
+                    $values = array_keys($options[$optionName], true, true);
+                    $cmdPattern .= str_repeat(" --$optionName %s", count($values));
+                    foreach ($values as $value) {
+                        $cmdArgs[] = escapeshellarg($value);
+                    }
+                    break;
+
+                case 'flag':
+                    if ($options[$optionName]) {
+                        $cmdPattern .= " --$optionName";
+                    }
+                    break;
+            }
         }
 
-        if ($this->force) {
-            $cmd_pattern .= ' --force';
-        }
-
-        if ($this->out && !$this->convertFormatTo) {
-            $cmd_pattern .= ' --out %s';
-            $cmd_args[] = escapeshellarg($this->out);
-        }
-
-        if ($this->rulesDir) {
-            $cmd_pattern .= ' --rules-dir %s';
-            $cmd_args[] = escapeshellarg($this->rulesDir);
-        }
-
-        if (!$this->formattersDir && $this->convertFormatTo) {
-            $this->formattersDir = 'node_modules/tslint-formatters/lib/tslint/formatters';
-        }
-
-        if ($this->formattersDir) {
-            $cmd_pattern .= ' --formatters-dir %s';
-            $cmd_args[] = escapeshellarg($this->formattersDir);
-        }
-
-        if ($this->format) {
-            $cmd_pattern .= ' --format %s';
-            $cmd_args[] = escapeshellarg($this->format);
-        }
-
-        if ($this->project) {
-            $cmd_pattern .= ' --project %s';
-            $cmd_args[] = escapeshellarg($this->project);
-        }
-
-        if ($this->typeCheck) {
-            $cmd_pattern .= ' --type-check';
-        }
-
-        $paths = array_keys($this->paths, true, true);
+        $paths = array_keys($this->getPaths(), true, true);
         if ($paths) {
-            $cmd_pattern .= ' --' . str_repeat(' %s', count($paths));
+            $cmdPattern .= ' --' . str_repeat(' %s', count($paths));
             foreach ($paths as $path) {
-                $cmd_args[] = escapeshellarg($path);
+                $cmdArgs[] = escapeshellarg($path);
             }
         }
 
-        if ($this->convertFormatTo) {
-            // @todo Configurable node executable.
-            // @todo Configurable tslint-formatters-convert executable.
-            $cmd_pattern .= ' | node node_modules/.bin/tslint-formatters-convert %s';
-            $cmd_args[] = escapeshellarg($this->convertFormatTo);
-
-            if ($this->out) {
-                $cmd_pattern .= ' --out %s';
-                $cmd_args[] = escapeshellarg($this->out);
-            }
-        }
-
-        return vsprintf($cmd_pattern, $cmd_args);
+        return vsprintf($cmdPattern, $cmdArgs);
     }
 
-    /**
-     * @return bool
-     */
-    protected function isReportHasToBePutBackIntoJar()
+    protected function buildCommandOptions(): array
+    {
+        return [
+            'config' => $this->getConfigFile(),
+            'exclude' => $this->getExclude(),
+            'force' => $this->getForce(),
+            'out' => $this->getOut(),
+            'rules-dir' => $this->getRulesDir(),
+            'formatters-dir' => $this->getFormattersDir(),
+            'format' => $this->getFormat(),
+            'project' => $this->getProject(),
+            'type-check' => $this->getTypeCheck(),
+        ];
+    }
+
+    protected function isReportHasToBePutBackIntoJar(): bool
     {
         return (
             $this->hasAssetJar()
@@ -705,49 +750,20 @@ class Run extends BaseTask implements
         );
     }
 
-    /**
-     * @return bool
-     */
-    protected function isOutputFormatMachineReadable()
+    protected function isOutputFormatMachineReadable(): bool
     {
-        return ($this->format === 'yaml');
+        return ($this->getFormat() === 'json');
     }
 
-    /**
-     * @param string $output
-     *
-     * @return ReportWrapperInterface
-     */
-    protected function decodeOutput($output)
+    protected function decodeOutput(string $output): ReportWrapperInterface
     {
-        $format = ($this->convertFormatTo === 'yaml2jsonGroupByFiles' ? 'json' : 'yaml');
-
-        switch ($format) {
-            case 'json':
-                return new JsonReportWrapper(json_decode($output, true));
-
-            case 'yaml':
-                if (function_exists('yaml_parse')) {
-                    $decoded = yaml_parse($output);
-                } else {
-                    $yamlVersion = ltrim(Versions::getShortVersion('symfony/yaml'), 'v');
-                    if (version_compare($yamlVersion, '3.1.0', '>=')) {
-                        $decoded = Yaml::parse($output, Yaml::PARSE_OBJECT_FOR_MAP);
-                    } else {
-                        $decoded = Yaml::parse($output);
-                    }
-                }
-
-                return new YamlReportWrapper($decoded);
-        }
-
-        return null;
+        return new ReportWrapper(json_decode($output, true));
     }
 
     /**
      * @return \Cheppers\LintReport\ReporterInterface[]
      */
-    protected function initLintReporters()
+    protected function initLintReporters(): array
     {
         $lintReporters = [];
         $c = $this->getContainer();
@@ -777,16 +793,11 @@ class Run extends BaseTask implements
 
     /**
      * Get the exit code regarding the failOn settings.
-     *
-     * @param int $numOfErrors
-     * @param int $numOfWarnings
-     *
-     * @return int
      */
-    protected function getTaskExitCode($numOfErrors, $numOfWarnings)
+    protected function getTaskExitCode(int $numOfErrors, int $numOfWarnings): int
     {
         if ($this->isLintSuccess()) {
-            switch ($this->failOn) {
+            switch ($this->getFailOn()) {
                 case 'never':
                     return static::EXIT_CODE_OK;
 
@@ -805,28 +816,21 @@ class Run extends BaseTask implements
         return $this->exitCode;
     }
 
-    /**
-     * @param int $exitCode
-     *
-     * @return string
-     */
-    protected function getExitMessage($exitCode)
+    protected function getExitMessage(int $exitCode): ?string
     {
         if (isset($this->exitMessages[$exitCode])) {
             return $this->exitMessages[$exitCode];
         }
 
-        return false;
+        return null;
     }
 
     /**
      * Returns true if the lint ran successfully.
      *
      * Returns true even if there was any code style error or warning.
-     *
-     * @return bool
      */
-    protected function isLintSuccess()
+    protected function isLintSuccess(): bool
     {
         return in_array($this->exitCode, $this->lintSuccessExitCodes());
     }
@@ -834,7 +838,7 @@ class Run extends BaseTask implements
     /**
      * @return int[]
      */
-    protected function lintSuccessExitCodes()
+    protected function lintSuccessExitCodes(): array
     {
         return [
             static::EXIT_CODE_OK,
@@ -843,13 +847,7 @@ class Run extends BaseTask implements
         ];
     }
 
-    /**
-     * Prepare directory for report outputs.
-     *
-     * @return null|\Robo\Result
-     *   Returns NULL on success or an error \Robo\Result.
-     */
-    protected function prepareOutputDirectory()
+    protected function prepareOutputDirectory(): Result
     {
         if (empty($this->out)) {
             return Result::success($this, 'There is no directory to create.');

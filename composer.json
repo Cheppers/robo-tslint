@@ -10,8 +10,7 @@
     "prefer-stable": true,
     "require": {
         "cheppers/asset-jar": "^0.0",
-        "consolidation/robo": "^1.0",
-        "samsonasik/package-versions": "^1.1"
+        "consolidation/robo": "^1.0"
     },
     "require-dev": {
         "cheppers/git-hooks": "^0.0",
@@ -19,12 +18,17 @@
         "cheppers/robo-git": "^0.0",
         "cheppers/robo-phpcs": "^0.0",
         "codeception/codeception": "^2.2",
-        "symfony/process": "^2.8||^3.1",
-        "symfony/yaml": "^2.8||^3.1"
+        "symfony/process": "^2.8||^3.1"
     },
     "autoload": {
         "psr-4": {
             "Cheppers\\Robo\\TsLint\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Cheppers\\Robo\\TsLint\\Test\\Unit\\": "tests/unit/",
+            "Cheppers\\Robo\\TsLint\\Test\\Acceptance\\": "tests/acceptance/"
         }
     },
     "scripts": {

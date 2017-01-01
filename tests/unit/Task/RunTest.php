@@ -1,14 +1,16 @@
 <?php
 
-namespace Cheppers\Robo\TsLint\Test\Task;
+namespace Cheppers\Robo\TsLint\Test\Unit\Task;
 
 use Cheppers\AssetJar\AssetJar;
 use Cheppers\Robo\TsLint\Task\Run as RunTask;
+use Codeception\Test\Unit;
 use Codeception\Util\Stub;
+use Helper\Dummy\Output as DummyOutput;
 use Helper\Dummy\Process as DummyProcess;
 use Robo\Robo;
 
-class RunTest extends \Codeception\Test\Unit
+class RunTest extends Unit
 {
     /**
      * @param $name
@@ -36,7 +38,7 @@ class RunTest extends \Codeception\Test\Unit
     {
         parent::setUp();
 
-        \Helper\Dummy\Process::reset();
+        DummyProcess::reset();
     }
 
     public function testGetSetLintReporters()
@@ -61,15 +63,22 @@ class RunTest extends \Codeception\Test\Unit
         );
     }
 
-    /**
-     * @return array
-     */
-    public function casesBuildCommand()
+    public function casesGetCommand(): array
     {
         return [
             'basic' => [
                 'node_modules/.bin/tslint',
                 [],
+                [],
+            ],
+            'basic-tslint' => [
+                'my-tslint',
+                ['tslintExecutable' => 'my-tslint'],
+                [],
+            ],
+            'basic-wd' => [
+                "cd 'foo' && node_modules/.bin/tslint",
+                ['workingDirectory' => 'foo'],
                 [],
             ],
             'configFile-empty' => [
@@ -198,55 +207,19 @@ class RunTest extends \Codeception\Test\Unit
                 ],
                 [],
             ],
-            'convertFormatTo-empty' => [
-                "node_modules/.bin/tslint",
-                ['convertFormatTo' => ''],
-                [],
-            ],
-            'convertFormatTo-foo' => [
-                implode(' ', [
-                    'node_modules/.bin/tslint',
-                    "--formatters-dir 'node_modules/tslint-formatters/lib/tslint/formatters'",
-                    '--',
-                    "'a'",
-                    '|',
-                    "node node_modules/.bin/tslint-formatters-convert 'yaml2jsonGroupByFiles'",
-                ]),
-                ['convertFormatTo' => 'yaml2jsonGroupByFiles'],
-                ['a'],
-            ],
-            'convertFormatTo-foo-with-out' => [
-                implode(' ', [
-                    'node_modules/.bin/tslint',
-                    "--formatters-dir 'node_modules/tslint-formatters/lib/tslint/formatters'",
-                    '--',
-                    "'a'",
-                    '|',
-                    "node node_modules/.bin/tslint-formatters-convert 'yaml2jsonGroupByFiles' --out 'b'",
-                ]),
-                [
-                    'out' => 'b',
-                    'convertFormatTo' => 'yaml2jsonGroupByFiles',
-                ],
-                ['a'],
-            ],
         ];
     }
 
     /**
-     * @dataProvider casesBuildCommand
-     *
-     * @param string $expected
-     * @param array $options
-     * @param array $paths
+     * @dataProvider casesGetCommand
      */
-    public function testBuildCommand($expected, array $options, array $paths)
+    public function testGetCommand(string $expected, array $options, array $paths): void
     {
         $tslint = new RunTask($options, $paths);
-        static::assertEquals($expected, $tslint->buildCommand());
+        static::assertEquals($expected, $tslint->getCommand());
     }
 
-    public function testExitCodeConstants()
+    public function testExitCodeConstants(): void
     {
         static::assertEquals(0, RunTask::EXIT_CODE_OK);
         static::assertEquals(1, RunTask::EXIT_CODE_WARNING);
@@ -254,10 +227,7 @@ class RunTest extends \Codeception\Test\Unit
         static::assertEquals(3, RunTask::EXIT_CODE_INVALID);
     }
 
-    /**
-     * @return array
-     */
-    public function casesGetTaskExitCode()
+    public function casesGetTaskExitCode(): array
     {
         $o = RunTask::EXIT_CODE_OK;
         $w = RunTask::EXIT_CODE_WARNING;
@@ -329,15 +299,14 @@ class RunTest extends \Codeception\Test\Unit
 
     /**
      * @dataProvider casesGetTaskExitCode
-     *
-     * @param int $expected
-     * @param string $failOn
-     * @param int $numOfErrors
-     * @param int $numOfWarnings
-     * @param int $exitCode
      */
-    public function testGetTaskExitCode($expected, $failOn, $numOfErrors, $numOfWarnings, $exitCode)
-    {
+    public function testGetTaskExitCode(
+        int $expected,
+        string $failOn,
+        int $numOfErrors,
+        int $numOfWarnings,
+        int $exitCode
+    ): void {
         /** @var RunTask $runTask */
         $runTask = Stub::construct(
             RunTask::class,
@@ -351,29 +320,42 @@ class RunTest extends \Codeception\Test\Unit
         );
     }
 
-    /**
-     * @return array
-     */
-    public function casesRun()
+    public function casesRun(): array
     {
         $reportBase = [];
 
-        $messageWarning = [
-            'line' => 1,
-            'column' => 2,
-            'length' => 3,
+        $failureWarning = [
             'severity' => 'warning',
-            'reason' => 'R1',
-            'linter' => 'S1',
+            'failure' => 'f1',
+            'name' => 'a.ts',
+            'ruleName' => 'r1',
+            'startPosition' => [
+                'character' => 11,
+                'line' => 12,
+                'position' => 13,
+            ],
+            'endPosition' => [
+                'character' => 14,
+                'line' => 15,
+                'position' => 16,
+            ],
         ];
 
-        $messageError = [
-            'line' => 3,
-            'column' => 4,
-            'length' => 5,
+        $failureError = [
             'severity' => 'error',
-            'reason' => 'R2',
-            'linter' => 'S2',
+            'failure' => 'f2',
+            'name' => 'b.ts',
+            'ruleName' => 'r2',
+            'startPosition' => [
+                'character' => 21,
+                'line' => 22,
+                'position' => 23,
+            ],
+            'endPosition' => [
+                'character' => 24,
+                'line' => 25,
+                'position' => 26,
+            ],
         ];
 
         $label_pattern = '%d; failOn: %s; E: %d; W: %d; exitCode: %d; withJar: %s;';
@@ -404,11 +386,11 @@ class RunTest extends \Codeception\Test\Unit
                 $report = $reportBase;
 
                 if ($c['e']) {
-                    $report['a.ts'][] = $messageError;
+                    $report[] = $failureError;
                 }
 
                 if ($c['w']) {
-                    $report['a.ts'][] = $messageWarning;
+                    $report[] = $failureWarning;
                 }
 
                 $label = sprintf($label_pattern, $i, $c['f'], $c['e'], $c['w'], $c['c'], $withJarStr);
@@ -429,25 +411,23 @@ class RunTest extends \Codeception\Test\Unit
     /**
      * This way cannot be tested those cases when the lint process failed.
      *
-     * @param int $exitCode
-     * @param array $options
-     * @param bool $withJar
-     * @param string $expectedStdOutput
-     *
      * @dataProvider casesRun
      */
-    public function testRun($exitCode, array $options, $withJar, $expectedStdOutput)
-    {
-        $container = \Robo\Robo::createDefaultContainer();
-        \Robo\Robo::setContainer($container);
+    public function testRun(
+        int $exitCode,
+        array $options,
+        bool $withJar,
+        string $expectedStdOutput
+    ): void {
+        $container = Robo::createDefaultContainer();
+        Robo::setContainer($container);
 
-        $mainStdOutput = new \Helper\Dummy\Output();
+        $mainStdOutput = new DummyOutput();
 
         $options += [
             'workingDirectory' => 'my-working-dir',
             'assetJarMapping' => ['report' => ['tsLintRun', 'report']],
-            'format' => 'yaml',
-            'convertFormatTo' => 'yaml2jsonGroupByFiles',
+            'format' => 'json',
         ];
 
         /** @var \Cheppers\Robo\TsLint\Task\Run $task */
@@ -459,9 +439,9 @@ class RunTest extends \Codeception\Test\Unit
             ]
         );
 
-        $processIndex = count(\Helper\Dummy\Process::$instances);
+        $processIndex = count(DummyProcess::$instances);
 
-        \Helper\Dummy\Process::$prophecy[$processIndex] = [
+        DummyProcess::$prophecy[$processIndex] = [
             'exitCode' => $exitCode,
             'stdOutput' => $expectedStdOutput,
         ];
@@ -483,12 +463,6 @@ class RunTest extends \Codeception\Test\Unit
             'Exit code'
         );
 
-        $this->tester->assertEquals(
-            $options['workingDirectory'],
-            \Helper\Dummy\Process::$instances[$processIndex]->getWorkingDirectory(),
-            'Working directory'
-        );
-
         if ($withJar) {
             /** @var \Cheppers\LintReport\ReportWrapperInterface $reportWrapper */
             $reportWrapper = $assetJar->getValue(['tsLintRun', 'report']);
@@ -506,17 +480,16 @@ class RunTest extends \Codeception\Test\Unit
         }
     }
 
-    public function testRunFailed()
+    public function testRunFailed(): void
     {
-        $container = \Robo\Robo::createDefaultContainer();
-        \Robo\Robo::setContainer($container);
+        $container = Robo::createDefaultContainer();
+        Robo::setContainer($container);
 
         $exitCode = 1;
         $expectedReport = [
-            'a.ts' => [
-                [
-                    'severity' => 'warning',
-                ],
+            [
+                'severity' => 'warning',
+                'name' => 'a.ts',
             ],
         ];
         $expectedReportJson = json_encode($expectedReport);
@@ -524,8 +497,7 @@ class RunTest extends \Codeception\Test\Unit
             'workingDirectory' => 'my-working-dir',
             'assetJarMapping' => ['report' => ['tsLintRun', 'report']],
             'failOn' => 'warning',
-            'format' => 'yaml',
-            'convertFormatTo' => 'yaml2jsonGroupByFiles',
+            'format' => 'json',
         ];
 
         /** @var RunTask $task */
@@ -537,9 +509,9 @@ class RunTest extends \Codeception\Test\Unit
             ]
         );
 
-        $processIndex = count(\Helper\Dummy\Process::$instances);
+        $processIndex = count(DummyProcess::$instances);
 
-        \Helper\Dummy\Process::$prophecy[$processIndex] = [
+        DummyProcess::$prophecy[$processIndex] = [
             'exitCode' => $exitCode,
             'stdOutput' => $expectedReportJson,
         ];
@@ -551,10 +523,10 @@ class RunTest extends \Codeception\Test\Unit
 
         $result = $task->run();
 
-        $this->tester->assertEquals($exitCode, $result->getExitCode());
         $this->tester->assertEquals(
-            $options['workingDirectory'],
-            \Helper\Dummy\Process::$instances[$processIndex]->getWorkingDirectory()
+            $exitCode,
+            $result->getExitCode(),
+            'Exit code'
         );
 
         /** @var \Cheppers\LintReport\ReportWrapperInterface $reportWrapper */
