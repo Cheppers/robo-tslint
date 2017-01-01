@@ -304,8 +304,6 @@ class Run extends BaseTask implements
 
     //region Option - format.
     /**
-     * The formatter to use to format the results.
-     *
      * @var string
      */
     protected $format = '';
@@ -316,7 +314,7 @@ class Run extends BaseTask implements
     }
 
     /**
-     * Specify how to display lints.
+     * The formatter to use to format the results.
      *
      * @return $this
      */
@@ -607,6 +605,11 @@ class Run extends BaseTask implements
      */
     public function run()
     {
+        $lintReporters = $this->initLintReporters();
+        if ($lintReporters && $this->getFormat() === '') {
+            $this->setFormat('json');
+        }
+
         $command = $this->getCommand();
         $this->printTaskInfo(
             'TsLint task runs: <info>{command}</info> in directory "<info>{workingDirectory}</info>"',
@@ -616,7 +619,6 @@ class Run extends BaseTask implements
             ]
         );
 
-        $lintReporters = $this->initLintReporters();
         if ($lintReporters && !$this->isOutputFormatMachineReadable()) {
             $this->exitCode = static::EXIT_CODE_INVALID;
 
