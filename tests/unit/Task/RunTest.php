@@ -1,6 +1,6 @@
 <?php
 
-namespace Cheppers\Robo\TsLint\Test\Unit\Task;
+namespace Cheppers\Robo\TsLint\Tests\Unit\Task;
 
 use Cheppers\AssetJar\AssetJar;
 use Cheppers\Robo\TsLint\Task\Run as RunTask;
@@ -12,12 +12,7 @@ use Robo\Robo;
 
 class RunTest extends Unit
 {
-    /**
-     * @param $name
-     *
-     * @return \ReflectionMethod
-     */
-    protected static function getMethod($name)
+    protected static function getMethod(string $name): \ReflectionMethod
     {
         $class = new \ReflectionClass(RunTask::class);
         $method = $class->getMethod($name);
@@ -41,7 +36,7 @@ class RunTest extends Unit
         DummyProcess::reset();
     }
 
-    public function testGetSetLintReporters()
+    public function testGetSetLintReporters(): void
     {
         $task = new RunTask([
             'lintReporters' => [

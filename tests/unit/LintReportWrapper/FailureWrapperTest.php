@@ -1,6 +1,6 @@
 <?php
 
-namespace Cheppers\Robo\TsLint\Test\Unit\LintReportWrapper;
+namespace Cheppers\Robo\TsLint\Tests\Unit\LintReportWrapper;
 
 use Cheppers\LintReport\ReportWrapperInterface;
 use Cheppers\Robo\TsLint\LintReportWrapper\FailureWrapper;

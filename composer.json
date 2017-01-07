@@ -28,8 +28,8 @@
     },
     "autoload-dev": {
         "psr-4": {
-            "Cheppers\\Robo\\TsLint\\Test\\Unit\\": "tests/unit/",
-            "Cheppers\\Robo\\TsLint\\Test\\Acceptance\\": "tests/acceptance/"
+            "Cheppers\\Robo\\TsLint\\Tests\\Unit\\": "tests/unit/",
+            "Cheppers\\Robo\\TsLint\\Tests\\Acceptance\\": "tests/acceptance/"
         }
     },
     "scripts": {

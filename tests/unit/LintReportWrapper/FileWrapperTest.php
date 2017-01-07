@@ -1,6 +1,6 @@
 <?php
 
-namespace Cheppers\Robo\TsLint\Test\Unit\LintReportWrapper;
+namespace Cheppers\Robo\TsLint\Tests\Unit\LintReportWrapper;
 
 use Cheppers\Robo\TsLint\LintReportWrapper\FileWrapper;
 use Codeception\Test\Unit;
