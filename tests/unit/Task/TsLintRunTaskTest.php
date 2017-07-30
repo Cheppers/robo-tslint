@@ -6,8 +6,9 @@ use Codeception\Test\Unit;
 use Codeception\Util\Stub;
 use Robo\Robo;
 use Sweetchuck\Robo\TsLint\Task\TsLintRunTask as RunTask;
-use Sweetchuck\Robo\TsLint\Test\Helper\Dummy\DummyOutput;
+use \Sweetchuck\Codeception\Module\RoboTaskRunner\DummyOutput;
 use Sweetchuck\Robo\TsLint\Test\Helper\Dummy\DummyProcess;
+use Symfony\Component\Console\Output\OutputInterface;
 
 class TsLintRunTaskTest extends Unit
 {
@@ -411,7 +412,11 @@ class TsLintRunTaskTest extends Unit
         $container = Robo::createDefaultContainer();
         Robo::setContainer($container);
 
-        $mainStdOutput = new DummyOutput();
+        $outputConfig = [
+            'verbosity' => OutputInterface::VERBOSITY_DEBUG,
+            'colors' => false,
+        ];
+        $mainStdOutput = new DummyOutput($outputConfig);
 
         $options += [
             'workingDirectory' => 'my-working-dir',
