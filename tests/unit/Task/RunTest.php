@@ -1,9 +1,9 @@
 <?php
 
-namespace Cheppers\Robo\TsLint\Tests\Unit\Task;
+namespace Sweetchuck\Robo\TsLint\Tests\Unit\Task;
 
-use Cheppers\AssetJar\AssetJar;
-use Cheppers\Robo\TsLint\Task\Run as RunTask;
+use Sweetchuck\AssetJar\AssetJar;
+use Sweetchuck\Robo\TsLint\Task\Run as RunTask;
 use Codeception\Test\Unit;
 use Codeception\Util\Stub;
 use Helper\Dummy\Output as DummyOutput;
@@ -425,7 +425,7 @@ class RunTest extends Unit
             'format' => 'json',
         ];
 
-        /** @var \Cheppers\Robo\TsLint\Task\Run $task */
+        /** @var \Sweetchuck\Robo\TsLint\Task\Run $task */
         $task = Stub::construct(
             RunTask::class,
             [$options, []],
@@ -459,7 +459,7 @@ class RunTest extends Unit
         );
 
         if ($withJar) {
-            /** @var \Cheppers\LintReport\ReportWrapperInterface $reportWrapper */
+            /** @var \Sweetchuck\LintReport\ReportWrapperInterface $reportWrapper */
             $reportWrapper = $assetJar->getValue(['tsLintRun', 'report']);
             $this->tester->assertEquals(
                 json_decode($expectedStdOutput, true),
@@ -524,7 +524,7 @@ class RunTest extends Unit
             'Exit code'
         );
 
-        /** @var \Cheppers\LintReport\ReportWrapperInterface $reportWrapper */
+        /** @var \Sweetchuck\LintReport\ReportWrapperInterface $reportWrapper */
         $reportWrapper = $assetJar->getValue(['tsLintRun', 'report']);
         $this->tester->assertEquals($expectedReport, $reportWrapper->getReport());
     }

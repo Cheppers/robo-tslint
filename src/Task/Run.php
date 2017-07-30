@@ -1,12 +1,12 @@
 <?php
 
-namespace Cheppers\Robo\TsLint\Task;
+namespace Sweetchuck\Robo\TsLint\Task;
 
-use Cheppers\AssetJar\AssetJarAware;
-use Cheppers\AssetJar\AssetJarAwareInterface;
-use Cheppers\LintReport\ReporterInterface;
-use Cheppers\LintReport\ReportWrapperInterface;
-use Cheppers\Robo\TsLint\LintReportWrapper\ReportWrapper;
+use Sweetchuck\AssetJar\AssetJarAware;
+use Sweetchuck\AssetJar\AssetJarAwareInterface;
+use Sweetchuck\LintReport\ReporterInterface;
+use Sweetchuck\LintReport\ReportWrapperInterface;
+use Sweetchuck\Robo\TsLint\LintReportWrapper\ReportWrapper;
 use League\Container\ContainerAwareInterface;
 use League\Container\ContainerAwareTrait;
 use Robo\Common\OutputAwareTrait;
@@ -26,7 +26,7 @@ use Symfony\Component\Process\Process;
  * Assert mapping:
  *   - report: Parsed JSON lint report.
  *
- * @package Cheppers\Robo\TsLint\Task
+ * @package Sweetchuck\Robo\TsLint\Task
  */
 class Run extends BaseTask implements
     AssetJarAwareInterface,
@@ -407,12 +407,12 @@ class Run extends BaseTask implements
 
     //region Option - lintReporters.
     /**
-     * @var string[]|\Cheppers\LintReport\ReporterInterface[]
+     * @var string[]|\Sweetchuck\LintReport\ReporterInterface[]
      */
     protected $lintReporters = [];
 
     /**
-     * @return string[]|\Cheppers\LintReport\ReporterInterface[]
+     * @return string[]|\Sweetchuck\LintReport\ReporterInterface[]
      */
     public function getLintReporters()
     {
@@ -433,7 +433,7 @@ class Run extends BaseTask implements
 
     /**
      * @param string $id
-     * @param string|\Cheppers\LintReport\ReporterInterface $lintReporter
+     * @param string|\Sweetchuck\LintReport\ReporterInterface $lintReporter
      *
      * @return $this
      */
@@ -763,7 +763,7 @@ class Run extends BaseTask implements
     }
 
     /**
-     * @return \Cheppers\LintReport\ReporterInterface[]
+     * @return \Sweetchuck\LintReport\ReporterInterface[]
      */
     protected function initLintReporters(): array
     {
