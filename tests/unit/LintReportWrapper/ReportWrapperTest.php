@@ -1,8 +1,8 @@
 <?php
 
-namespace Cheppers\Robo\TsLint\Test\Unit\LintReportWrapper;
+namespace Sweetchuck\Robo\TsLint\Tests\Unit\LintReportWrapper;
 
-use Cheppers\Robo\TsLint\LintReportWrapper\ReportWrapper;
+use Sweetchuck\Robo\TsLint\LintReportWrapper\ReportWrapper;
 use Codeception\Test\Unit;
 
 class ReportWrapperTest extends Unit
@@ -136,7 +136,7 @@ class ReportWrapperTest extends Unit
 
         /**
          * @var string $filePath
-         * @var \Cheppers\Robo\TsLint\LintReportWrapper\FileWrapper $fw
+         * @var \Sweetchuck\Robo\TsLint\LintReportWrapper\FileWrapper $fw
          */
         foreach ($rw->yieldFiles() as $filePath => $fw) {
             $fileStats = $filesStats[$filePath];

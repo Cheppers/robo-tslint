@@ -1,8 +1,8 @@
 <?php
 
-namespace Cheppers\Robo\TsLint\LintReportWrapper;
+namespace Sweetchuck\Robo\TsLint\LintReportWrapper;
 
-use Cheppers\LintReport\ReportWrapperInterface;
+use Sweetchuck\LintReport\ReportWrapperInterface;
 
 class ReportWrapper implements ReportWrapperInterface
 {
@@ -47,7 +47,7 @@ class ReportWrapper implements ReportWrapperInterface
     /**
      * {@inheritdoc}
      */
-    public function setReport($report)
+    public function setReport(array $report)
     {
         $this->report = $report;
         $this->reportInternal = [];
@@ -84,7 +84,7 @@ class ReportWrapper implements ReportWrapperInterface
     /**
      * {@inheritdoc}
      */
-    public function countFiles()
+    public function countFiles(): int
     {
         return count($this->reportInternal);
     }

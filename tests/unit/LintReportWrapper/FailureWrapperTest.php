@@ -1,9 +1,9 @@
 <?php
 
-namespace Cheppers\Robo\TsLint\Test\Unit\LintReportWrapper;
+namespace Sweetchuck\Robo\TsLint\Tests\Unit\LintReportWrapper;
 
-use Cheppers\LintReport\ReportWrapperInterface;
-use Cheppers\Robo\TsLint\LintReportWrapper\FailureWrapper;
+use Sweetchuck\LintReport\ReportWrapperInterface;
+use Sweetchuck\Robo\TsLint\LintReportWrapper\FailureWrapper;
 use Codeception\Test\Unit;
 
 class FailureWrapperTest extends Unit

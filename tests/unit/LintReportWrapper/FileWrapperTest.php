@@ -1,8 +1,8 @@
 <?php
 
-namespace Cheppers\Robo\TsLint\Test\Unit\LintReportWrapper;
+namespace Sweetchuck\Robo\TsLint\Tests\Unit\LintReportWrapper;
 
-use Cheppers\Robo\TsLint\LintReportWrapper\FileWrapper;
+use Sweetchuck\Robo\TsLint\LintReportWrapper\FileWrapper;
 use Codeception\Test\Unit;
 
 class FileWrapperTest extends Unit

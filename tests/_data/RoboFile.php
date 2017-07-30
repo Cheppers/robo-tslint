@@ -1,8 +1,8 @@
 <?php
 
-use Cheppers\LintReport\Reporter\BaseReporter;
-use Cheppers\LintReport\Reporter\SummaryReporter;
-use Cheppers\LintReport\Reporter\VerboseReporter;
+use Sweetchuck\LintReport\Reporter\BaseReporter;
+use Sweetchuck\LintReport\Reporter\SummaryReporter;
+use Sweetchuck\LintReport\Reporter\VerboseReporter;
 use League\Container\ContainerAwareInterface;
 use League\Container\ContainerInterface;
 use Robo\Contract\ConfigAwareInterface;
@@ -14,7 +14,7 @@ use Robo\Contract\ConfigAwareInterface;
 class RoboFile extends \Robo\Tasks
 {
     // @codingStandardsIgnoreEnd
-    use \Cheppers\Robo\TsLint\TsLintTaskLoader;
+    use \Sweetchuck\Robo\TsLint\TsLintTaskLoader;
 
     /**
      * @var string
@@ -36,7 +36,7 @@ class RoboFile extends \Robo\Tasks
     }
 
     /**
-     * @return \Cheppers\Robo\TsLint\Task\Run
+     * @return \Sweetchuck\Robo\TsLint\Task\Run
      */
     public function lintStylishStdOutput()
     {
@@ -47,7 +47,7 @@ class RoboFile extends \Robo\Tasks
     }
 
     /**
-     * @return \Cheppers\Robo\TsLint\Task\Run
+     * @return \Sweetchuck\Robo\TsLint\Task\Run
      */
     public function lintStylishFile()
     {
@@ -59,7 +59,7 @@ class RoboFile extends \Robo\Tasks
     }
 
     /**
-     * @return \Cheppers\Robo\TsLint\Task\Run
+     * @return \Sweetchuck\Robo\TsLint\Task\Run
      */
     public function lintAllInOne()
     {

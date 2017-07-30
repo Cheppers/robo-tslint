@@ -1,9 +1,9 @@
 <?php
 
-namespace Cheppers\Robo\TsLint\LintReportWrapper;
+namespace Sweetchuck\Robo\TsLint\LintReportWrapper;
 
-use Cheppers\LintReport\FileWrapperInterface;
-use Cheppers\LintReport\ReportWrapperInterface;
+use Sweetchuck\LintReport\FileWrapperInterface;
+use Sweetchuck\LintReport\ReportWrapperInterface;
 
 class FileWrapper implements FileWrapperInterface
 {

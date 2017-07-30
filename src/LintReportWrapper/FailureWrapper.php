@@ -1,9 +1,9 @@
 <?php
 
-namespace Cheppers\Robo\TsLint\LintReportWrapper;
+namespace Sweetchuck\Robo\TsLint\LintReportWrapper;
 
-use Cheppers\LintReport\FailureWrapperInterface;
-use Cheppers\LintReport\ReportWrapperInterface;
+use Sweetchuck\LintReport\FailureWrapperInterface;
+use Sweetchuck\LintReport\ReportWrapperInterface;
 
 class FailureWrapper implements FailureWrapperInterface
 {

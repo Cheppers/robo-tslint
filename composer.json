@@ -1,5 +1,5 @@
 {
-    "name": "cheppers/robo-tslint",
+    "name": "sweetchuck/robo-tslint",
     "description": "Robo task wrapper for tslint",
     "license": "GPL-2.0+",
     "config": {
@@ -10,38 +10,33 @@
     "prefer-stable": true,
     "require": {
         "php": ">=7.1",
-        "cheppers/asset-jar": "^0.0",
+        "sweetchuck/asset-jar": "^0.0",
         "consolidation/robo": "^1.0"
     },
     "require-dev": {
-        "cheppers/git-hooks": "^0.0",
-        "cheppers/lint-report": "^0.0",
-        "cheppers/robo-git": "^0.0",
-        "cheppers/robo-phpcs": "^0.0",
+        "sweetchuck/git-hooks": "^0.0",
+        "sweetchuck/lint-report": "^0.0",
+        "sweetchuck/robo-git": "^0.0",
+        "sweetchuck/robo-phpcs": "^0.0",
         "codeception/codeception": "^2.2",
-        "symfony/process": "^2.8||^3.1"
+        "symfony/process": "^2.8 || ^3.1"
     },
     "autoload": {
         "psr-4": {
-            "Cheppers\\Robo\\TsLint\\": "src/"
+            "Sweetchuck\\Robo\\TsLint\\": "src/"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "Cheppers\\Robo\\TsLint\\Test\\Unit\\": "tests/unit/",
-            "Cheppers\\Robo\\TsLint\\Test\\Acceptance\\": "tests/acceptance/"
+            "Sweetchuck\\Robo\\TsLint\\Composer\\": "src-dev/Composer/",
+            "Sweetchuck\\Robo\\TsLint\\Tests\\Unit\\": "tests/unit/",
+            "Sweetchuck\\Robo\\TsLint\\Tests\\Acceptance\\": "tests/acceptance/"
         }
     },
     "scripts": {
-        "post-install-cmd": [
-            "@deploy-git-hooks",
-            "@npm-install"
-        ],
-        "post-update-cmd": [
-            "@deploy-git-hooks",
-            "@npm-install"
-        ],
-        "deploy-git-hooks": "\\Cheppers\\GitHooks\\Main::deploy",
-        "npm-install": "cd tests/_data && npm install"
+        "post-install-cmd": "\\Sweetchuck\\Robo\\TsLint\\Composer\\Scripts::postInstallCmd",
+        "post-update-cmd": "\\Sweetchuck\\Robo\\TsLint\\Composer\\Scripts::postUpdateCmd",
+        "deploy-git-hooks": "\\Sweetchuck\\GitHooks\\Composer\\Scripts::deploy",
+        "npm-install": "\\Sweetchuck\\Robo\\TsLint\\Composer\\Scripts::npmInstall"
     }
 }

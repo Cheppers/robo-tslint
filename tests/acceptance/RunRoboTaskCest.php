@@ -1,6 +1,6 @@
 <?php
 
-namespace Cheppers\Robo\TsLint\Test\Acceptance;
+namespace Sweetchuck\Robo\TsLint\Tests\Acceptance;
 
 use AcceptanceTester;
 
