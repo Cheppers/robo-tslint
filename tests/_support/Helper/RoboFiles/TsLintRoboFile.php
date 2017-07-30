@@ -1,15 +1,20 @@
 <?php
 
+namespace Sweetchuck\Robo\TsLint\Test\Helper\RoboFiles;
+
+use Robo\Tasks;
 use Sweetchuck\LintReport\Reporter\BaseReporter;
 use Sweetchuck\LintReport\Reporter\SummaryReporter;
 use Sweetchuck\LintReport\Reporter\VerboseReporter;
 use League\Container\ContainerInterface;
+use Sweetchuck\Robo\TsLint\TsLintTaskLoader;
 
 // @codingStandardsIgnoreStart
-class RoboFile extends \Robo\Tasks
+class TsLintRoboFile extends Tasks
 {
     // @codingStandardsIgnoreEnd
-    use \Sweetchuck\Robo\TsLint\TsLintTaskLoader;
+
+    use TsLintTaskLoader;
 
     /**
      * @var string
