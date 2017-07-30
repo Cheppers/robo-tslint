@@ -9,14 +9,11 @@ use Codeception\Test\Unit;
 class FailureWrapperTest extends Unit
 {
     /**
-     * @var \UnitTester
+     * @var \Sweetchuck\Robo\TsLint\Test\UnitTester
      */
     protected $tester;
 
-    /**
-     * @return array
-     */
-    public function casesAll()
+    public function casesAll(): array
     {
         return [
             'a' => [

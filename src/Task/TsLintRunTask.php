@@ -18,14 +18,6 @@ use Robo\Task\Filesystem\loadShortcuts as FsShortCuts;
 use Robo\TaskAccessor;
 use Symfony\Component\Process\Process;
 
-/**
- * Class TaskTsLintRun.
- *
- * Assert mapping:
- *   - report: Parsed JSON lint report.
- *
- * @package Sweetchuck\Robo\TsLint\Task
- */
 class TsLintRunTask extends BaseTask implements
     CommandInterface,
     ContainerAwareInterface,
@@ -55,9 +47,26 @@ class TsLintRunTask extends BaseTask implements
     const EXIT_CODE_ERROR = 2;
 
     /**
+     * Couldn't create the output directory.
+     */
+    const EXIT_CODE_OUTPUT_DIR = 3;
+
+    /**
      * Something is invalid.
      */
-    const EXIT_CODE_INVALID = 3;
+    const EXIT_CODE_INVALID = 4;
+
+    /**
+     * Exit code and error message mapping.
+     *
+     * @var string
+     */
+    protected $taskExitMessages = [
+        0 => 'No lints were found',
+        1 => 'Lints with a severity of warning were reported (no errors)',
+        2 => 'One or more errors were reported (and any number of warnings)',
+        3 => 'Extra lint reporters can be used only if the output format is "json".',
+    ];
 
     /**
      * @todo Some kind of dependency injection would be awesome.
@@ -66,7 +75,7 @@ class TsLintRunTask extends BaseTask implements
      */
     protected $processClass = Process::class;
 
-    //region Options.
+    // region Options.
 
     // region Option - assetNamePrefix.
     /**
@@ -90,7 +99,7 @@ class TsLintRunTask extends BaseTask implements
     }
     // endregion
 
-    //region Option - workingDirectory.
+    // region Option - workingDirectory.
     /**
      * @var string
      */
@@ -112,9 +121,9 @@ class TsLintRunTask extends BaseTask implements
 
         return $this;
     }
-    //endregion
+    // endregion
 
-    //region Option - tslintExecutable.
+    // region Option - tslintExecutable.
     /**
      * @var string
      */
@@ -134,9 +143,9 @@ class TsLintRunTask extends BaseTask implements
 
         return $this;
     }
-    //endregion
+    // endregion
 
-    //region Option - failOn.
+    // region Option - failOn.
     /**
      * Severity level.
      *
@@ -163,9 +172,9 @@ class TsLintRunTask extends BaseTask implements
 
         return $this;
     }
-    //endregion
+    // endregion
 
-    //region Option - configFile.
+    // region Option - configFile.
     /**
      * @var string
      */
@@ -187,9 +196,9 @@ class TsLintRunTask extends BaseTask implements
 
         return $this;
     }
-    //endregion
+    // endregion
 
-    //region Option - exclude.
+    // region Option - exclude.
     /**
      * A filename or glob which indicates files to exclude from linting.
      *
@@ -218,9 +227,9 @@ class TsLintRunTask extends BaseTask implements
 
         return $this;
     }
-    //endregion
+    // endregion
 
-    //region Option - force.
+    // region Option - force.
     /**
      * Return status code 0 even if there are any lint errors.
      *
@@ -242,9 +251,9 @@ class TsLintRunTask extends BaseTask implements
 
         return $this;
     }
-    //endregion
+    // endregion
 
-    //region Option - out.
+    // region Option - out.
     /**
      * A filename to output the results to.
      *
@@ -271,9 +280,9 @@ class TsLintRunTask extends BaseTask implements
 
         return $this;
     }
-    //endregion
+    // endregion
 
-    //region Option - rulesDir.
+    // region Option - rulesDir.
     /**
      * @var string
      */
@@ -295,9 +304,9 @@ class TsLintRunTask extends BaseTask implements
 
         return $this;
     }
-    //endregion
+    // endregion
 
-    //region Option - formattersDir.
+    // region Option - formattersDir.
     /**
      * An additional formatters directory, for user-created formatters.
      *
@@ -319,9 +328,9 @@ class TsLintRunTask extends BaseTask implements
 
         return $this;
     }
-    //endregion
+    // endregion
 
-    //region Option - format.
+    // region Option - format.
     /**
      * @var string
      */
@@ -343,9 +352,9 @@ class TsLintRunTask extends BaseTask implements
 
         return $this;
     }
-    //endregion
+    // endregion
 
-    //region Option - project.
+    // region Option - project.
     /**
      * @var string
      */
@@ -367,9 +376,9 @@ class TsLintRunTask extends BaseTask implements
 
         return $this;
     }
-    //endregion
+    // endregion
 
-    //region Option - typeCheck.
+    // region Option - typeCheck.
     /**
      * @var bool
      */
@@ -393,9 +402,9 @@ class TsLintRunTask extends BaseTask implements
 
         return $this;
     }
-    //endregion
+    // endregion
 
-    //region Option - paths.
+    // region Option - paths.
     /**
      * @var array
      */
@@ -422,9 +431,9 @@ class TsLintRunTask extends BaseTask implements
 
         return $this;
     }
-    //endregion
+    // endregion
 
-    //region Option - lintReporters.
+    // region Option - lintReporters.
     /**
      * @var string[]|\Sweetchuck\LintReport\ReporterInterface[]
      */
@@ -439,8 +448,6 @@ class TsLintRunTask extends BaseTask implements
     }
 
     /**
-     * @param array $lintReporters
-     *
      * @return $this
      */
     public function setLintReporters(array $lintReporters)
@@ -456,7 +463,7 @@ class TsLintRunTask extends BaseTask implements
      *
      * @return $this
      */
-    public function addLintReporter($id, $lintReporter = null)
+    public function addLintReporter(string $id, $lintReporter = null)
     {
         $this->lintReporters[$id] = $lintReporter;
 
@@ -472,14 +479,40 @@ class TsLintRunTask extends BaseTask implements
 
         return $this;
     }
-    //endregion
-    //endregion
+    // endregion
+    // endregion
+
+    /**
+     * Process exit code.
+     *
+     * @var int
+     */
+    protected $lintExitCode = 0;
+
+    /**
+     * Process stdOutput.
+     *
+     * @var string
+     */
+    protected $lintStdOutput = '';
+
+    /**
+     * Process stdError.
+     *
+     * @var string
+     */
+    protected $lintStdError = '';
+
+    /**
+     * @var string
+     */
+    protected $command = '';
 
     /**
      * @var array
      */
     protected $assets = [
-        'report' => [],
+        'report' => null,
     ];
 
     protected $options = [
@@ -492,25 +525,6 @@ class TsLintRunTask extends BaseTask implements
         'format' => 'value',
         'project' => 'value',
         'type-check' => 'flag',
-    ];
-
-    /**
-     * Process exit code.
-     *
-     * @var int
-     */
-    protected $exitCode = 0;
-
-    /**
-     * Exit code and error message mapping.
-     *
-     * @var string
-     */
-    protected $exitMessages = [
-        0 => 'No lints were found',
-        1 => 'Lints with a severity of warning were reported (no errors)',
-        2 => 'One or more errors were reported (and any number of warnings)',
-        3 => 'Extra lint reporters can be used only if the output format is "json".',
     ];
 
     /**
@@ -612,7 +626,7 @@ class TsLintRunTask extends BaseTask implements
      * @return bool[]
      *   Key is the relevant value, the value is a boolean.
      */
-    protected function createIncludeList($items, $include): array
+    protected function createIncludeList($items, bool $include): array
     {
         if (!is_array($items)) {
             $items = [$items => $include];
@@ -631,45 +645,85 @@ class TsLintRunTask extends BaseTask implements
      */
     public function run()
     {
-        $lintReporters = $this->initLintReporters();
-        if ($lintReporters && $this->getFormat() === '') {
+        return $this
+            ->runPrepare()
+            ->runHeader()
+            ->runDoIt()
+            ->runProcessOutput()
+            ->runReturn();
+    }
+
+    /**
+     * @return $this
+     */
+    protected function runPrepare()
+    {
+        $this->initLintReporters();
+        if ($this->getLintReporters() && $this->getFormat() === '') {
             $this->setFormat('json');
         }
 
-        $command = $this->getCommand();
+        $this->command = $this->getCommand();
+
+        return $this;
+    }
+
+    /**
+     * @return $this
+     */
+    protected function runHeader()
+    {
         $this->printTaskInfo(
             'TsLint task runs: <info>{command}</info> in directory "<info>{workingDirectory}</info>"',
             [
-                'command' => $command,
+                'command' => $this->command,
                 'workingDirectory' => $this->workingDirectory ?: '.',
             ]
         );
 
-        if ($lintReporters && !$this->isOutputFormatMachineReadable()) {
-            $this->exitCode = static::EXIT_CODE_INVALID;
+        return $this;
+    }
 
-            return new Result($this, $this->exitCode, $this->getExitMessage($this->exitCode));
+    /**
+     * @return $this
+     */
+    public function runDoIt()
+    {
+        $lintReporters = $this->getLintReporters();
+        if ($lintReporters && !$this->isOutputFormatMachineReadable()) {
+            $this->lintExitCode = static::EXIT_CODE_INVALID;
+
+            return $this;
         }
 
         /** @var Process $process */
-        $process = new $this->processClass($command);
+        $process = new $this->processClass($this->command);
 
+        // @todo Add the "mkdir -p 'foo' command to the ::getCommand()."
         $result = $this->prepareOutputDirectory();
         if (!$result->wasSuccessful()) {
-            return $result;
+            $this->lintExitCode = static::EXIT_CODE_OUTPUT_DIR;
+
+            return $this;
         }
 
-        $this->exitCode = $process->run();
+        $this->lintExitCode = $process->run();
+        $this->lintStdOutput = $process->getOutput();
+        $this->lintStdError = $process->getErrorOutput();
 
-        $numOfErrors = $this->exitCode;
-        $numOfWarnings = 0;
+        return $this;
+    }
+
+    /**
+     * @return $this
+     */
+    public function runProcessOutput()
+    {
         if ($this->isLintSuccess()) {
-            $originalOutput = $process->getOutput();
+            $lintReporters = $this->getLintReporters();
             if ($this->isOutputFormatMachineReadable()) {
-                $machineOutput = ($this->out ? file_get_contents($this->out) : $originalOutput);
+                $machineOutput = ($this->out ? file_get_contents($this->out) : $this->lintStdOutput);
                 $reportWrapper = $this->decodeOutput($machineOutput);
-                $numOfErrors = $reportWrapper->numOfErrors();
-                $numOfWarnings = $reportWrapper->numOfWarnings();
 
                 if ($this->isLintSuccess()) {
                     $this->assets['report'] = $reportWrapper;
@@ -683,16 +737,19 @@ class TsLintRunTask extends BaseTask implements
             }
 
             if (!$lintReporters) {
-                $this->output()->write($originalOutput);
+                $this->output()->write($this->lintStdOutput);
             }
         }
 
-        $exitCode = $this->getTaskExitCode($numOfErrors, $numOfWarnings);
+        return $this;
+    }
 
+    protected function runReturn(): Result
+    {
         return new Result(
             $this,
-            $exitCode,
-            $this->getExitMessage($exitCode) ?: $process->getErrorOutput(),
+            $this->getTaskExitCode(),
+            $this->getTaskExitMessage(),
             $this->getAssetsWithPrefixedNames()
         );
     }
@@ -778,14 +835,16 @@ class TsLintRunTask extends BaseTask implements
     }
 
     /**
-     * @return \Sweetchuck\LintReport\ReporterInterface[]
+     * @return $this
      */
-    protected function initLintReporters(): array
+    protected function initLintReporters()
     {
         $lintReporters = [];
         $c = $this->getContainer();
         foreach ($this->getLintReporters() as $id => $lintReporter) {
             if ($lintReporter === false) {
+                unset($this->lintReporters[$id]);
+
                 continue;
             }
 
@@ -803,17 +862,25 @@ class TsLintRunTask extends BaseTask implements
                         ->setDestination($this->output());
                 }
             }
+
+            $this->lintReporters[$id] = $lintReporter;
         }
 
-        return $lintReporters;
+        return $this;
     }
 
     /**
      * Get the exit code regarding the failOn settings.
      */
-    protected function getTaskExitCode(int $numOfErrors, int $numOfWarnings): int
+    protected function getTaskExitCode(): int
     {
-        if ($this->isLintSuccess()) {
+        /** @var \Sweetchuck\LintReport\ReportWrapperInterface $report */
+        $report = $this->assets['report'] ?? null;
+
+        if ($report) {
+            $numOfErrors = $report->numOfErrors();
+            $numOfWarnings = $report->numOfWarnings();
+
             switch ($this->getFailOn()) {
                 case 'never':
                     return static::EXIT_CODE_OK;
@@ -830,16 +897,12 @@ class TsLintRunTask extends BaseTask implements
             }
         }
 
-        return $this->exitCode;
+        return $this->lintExitCode;
     }
 
-    protected function getExitMessage(int $exitCode): ?string
+    protected function getTaskExitMessage(): string
     {
-        if (isset($this->exitMessages[$exitCode])) {
-            return $this->exitMessages[$exitCode];
-        }
-
-        return null;
+        return $this->taskExitMessages[$this->lintExitCode] ?? $this->lintStdError;
     }
 
     /**
@@ -849,7 +912,7 @@ class TsLintRunTask extends BaseTask implements
      */
     protected function isLintSuccess(): bool
     {
-        return in_array($this->exitCode, $this->lintSuccessExitCodes());
+        return in_array($this->lintExitCode, $this->lintSuccessExitCodes());
     }
 
     /**

@@ -5,9 +5,11 @@ namespace Sweetchuck\Robo\TsLint\Tests\Unit\Task;
 use Codeception\Test\Unit;
 use Codeception\Util\Stub;
 use Robo\Robo;
+use Sweetchuck\Robo\TsLint\LintReportWrapper\ReportWrapper;
 use Sweetchuck\Robo\TsLint\Task\TsLintRunTask as RunTask;
-use Sweetchuck\Robo\TsLint\Test\Helper\Dummy\DummyOutput;
+use \Sweetchuck\Codeception\Module\RoboTaskRunner\DummyOutput;
 use Sweetchuck\Robo\TsLint\Test\Helper\Dummy\DummyProcess;
+use Symfony\Component\Console\Output\OutputInterface;
 
 class TsLintRunTaskTest extends Unit
 {
@@ -218,7 +220,8 @@ class TsLintRunTaskTest extends Unit
         static::assertEquals(0, RunTask::EXIT_CODE_OK);
         static::assertEquals(1, RunTask::EXIT_CODE_WARNING);
         static::assertEquals(2, RunTask::EXIT_CODE_ERROR);
-        static::assertEquals(3, RunTask::EXIT_CODE_INVALID);
+        static::assertEquals(3, RunTask::EXIT_CODE_OUTPUT_DIR);
+        static::assertEquals(4, RunTask::EXIT_CODE_INVALID);
     }
 
     public function casesGetTaskExitCode(): array
@@ -299,22 +302,41 @@ class TsLintRunTaskTest extends Unit
         string $failOn,
         int $numOfErrors,
         int $numOfWarnings,
-        int $exitCode
+        int $lintExitCode
     ): void {
+        $reportWrapper = null;
+        if ($lintExitCode < 3) {
+            $report = [];
+            foreach (['error' => $numOfErrors, 'warning' => $numOfWarnings] as $severity => $amount) {
+                for ($i = 0; $i < $amount; $i++) {
+                    $report[] = [
+                        'severity' => $severity,
+                        'name' => 'a.ts',
+                    ];
+                }
+            }
+            $reportWrapper = new ReportWrapper($report);
+        }
+
         /** @var RunTask $runTask */
         $runTask = Stub::construct(
             RunTask::class,
             [['failOn' => $failOn]],
-            ['exitCode' => $exitCode]
+            [
+                'lintExitCode' => $lintExitCode,
+                'assets' => [
+                    'report' => $reportWrapper,
+                ],
+            ]
         );
 
         static::assertEquals(
             $expected,
-            static::getMethod('getTaskExitCode')->invokeArgs($runTask, [$numOfErrors, $numOfWarnings])
+            static::getMethod('getTaskExitCode')->invokeArgs($runTask, [])
         );
     }
 
-    public function casesRun(): array
+    public function casesRunSuccess(): array
     {
         $reportBase = [];
 
@@ -390,6 +412,7 @@ class TsLintRunTaskTest extends Unit
                 $c['c'],
                 [
                     'failOn' => $c['f'],
+                    'assetNamePrefix' => ($c['c'] === 0 ? 'foo' : ''),
                 ],
                 json_encode($report)
             ];
@@ -401,9 +424,9 @@ class TsLintRunTaskTest extends Unit
     /**
      * This way cannot be tested those cases when the lint process failed.
      *
-     * @dataProvider casesRun
+     * @dataProvider casesRunSuccess
      */
-    public function testRun(
+    public function testRunSuccess(
         int $exitCode,
         array $options,
         string $expectedStdOutput
@@ -411,7 +434,11 @@ class TsLintRunTaskTest extends Unit
         $container = Robo::createDefaultContainer();
         Robo::setContainer($container);
 
-        $mainStdOutput = new DummyOutput();
+        $outputConfig = [
+            'verbosity' => OutputInterface::VERBOSITY_DEBUG,
+            'colors' => false,
+        ];
+        $mainStdOutput = new DummyOutput($outputConfig);
 
         $options += [
             'workingDirectory' => 'my-working-dir',
@@ -432,6 +459,7 @@ class TsLintRunTaskTest extends Unit
         DummyProcess::$prophecy[$processIndex] = [
             'exitCode' => $exitCode,
             'stdOutput' => $expectedStdOutput,
+            'stdError' => '',
         ];
 
         $task->setLogger($container->get('logger'));
@@ -494,6 +522,7 @@ class TsLintRunTaskTest extends Unit
         DummyProcess::$prophecy[$processIndex] = [
             'exitCode' => $exitCode,
             'stdOutput' => $expectedReportJson,
+            'stdError' => '',
         ];
 
         $task->setConfig(Robo::config());
