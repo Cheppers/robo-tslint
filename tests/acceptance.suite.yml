@@ -1,5 +1,6 @@
 
 class_name: 'AcceptanceTester'
+
 modules:
     enabled:
         - '\Sweetchuck\Robo\TsLint\Test\Helper\Module\Cli'

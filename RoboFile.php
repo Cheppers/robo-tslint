@@ -1,15 +1,13 @@
 <?php
 
 // @codingStandardsIgnoreStart
+use Robo\Collection\CollectionBuilder;
 use Sweetchuck\LintReport\Reporter\BaseReporter;
 use Sweetchuck\LintReport\Reporter\CheckstyleReporter;
 use League\Container\ContainerInterface;
 use Symfony\Component\Process\Process;
 use Symfony\Component\Yaml\Yaml;
 
-/**
- * Class RoboFile.
- */
 class RoboFile extends \Robo\Tasks
 // @codingStandardsIgnoreEnd
 {
@@ -58,9 +56,6 @@ class RoboFile extends \Robo\Tasks
      */
     protected $environment = '';
 
-    /**
-     * RoboFile constructor.
-     */
     public function __construct()
     {
         putenv('COMPOSER_DISABLE_XDEBUG_WARN=1');
@@ -80,7 +75,7 @@ class RoboFile extends \Robo\Tasks
     /**
      * @return string
      */
-    protected function getEnvironment()
+    protected function getEnvironment(): string
     {
         if ($this->environment) {
             return $this->environment;
@@ -91,43 +86,35 @@ class RoboFile extends \Robo\Tasks
 
     /**
      * Git "pre-commit" hook callback.
-     *
-     * @return \Robo\Collection\CollectionBuilder
      */
-    public function githookPreCommit()
+    public function githookPreCommit(): CollectionBuilder
     {
         $this->environment = 'git-hook';
 
         return $this
             ->collectionBuilder()
-            ->addTaskList([
-                'lint.composer.lock' => $this->taskComposerValidate(),
-                'lint.phpcs.psr2' => $this->getTaskPhpcsLint(),
-                'codecept' => $this->getTaskCodecept(),
-            ]);
+            ->addTask($this->taskComposerValidate())
+            ->addTask($this->getTaskPhpcsLint())
+            ->addTask($this->getTaskCodecept());
     }
 
     /**
      * Run the Robo unit tests.
      */
-    public function test()
+    public function test(): CollectionBuilder
     {
         return $this->getTaskCodecept();
     }
 
     /**
      * Run code style checkers.
-     *
-     * @return \Robo\Collection\CollectionBuilder
      */
-    public function lint()
+    public function lint(): CollectionBuilder
     {
         return $this
             ->collectionBuilder()
-            ->addTaskList([
-                'lint.composer.lock' => $this->taskComposerValidate(),
-                'lint.phpcs.psr2' => $this->getTaskPhpcsLint(),
-            ]);
+            ->addTask($this->taskComposerValidate())
+            ->addTask($this->getTaskPhpcsLint());
     }
 
     /**
@@ -171,10 +158,7 @@ class RoboFile extends \Robo\Tasks
         return $this;
     }
 
-    /**
-     * @return \Robo\Collection\CollectionBuilder
-     */
-    protected function getTaskCodecept()
+    protected function getTaskCodecept(): CollectionBuilder
     {
         $environment = $this->getEnvironment();
         $withCoverage = $environment !== 'git-hook';
@@ -283,12 +267,7 @@ class RoboFile extends \Robo\Tasks
                 ->deferTaskConfiguration('setFiles', 'files'));
     }
 
-    /**
-     * @param string $extension
-     *
-     * @return bool
-     */
-    protected function isPhpExtensionAvailable($extension)
+    protected function isPhpExtensionAvailable(string $extension): bool
     {
         $command = sprintf('%s -m', escapeshellcmd($this->phpExecutable));
 
@@ -301,10 +280,7 @@ class RoboFile extends \Robo\Tasks
         return in_array($extension, explode("\n", $process->getOutput()));
     }
 
-    /**
-     * @return bool
-     */
-    protected function isPhpDbgAvailable()
+    protected function isPhpDbgAvailable(): bool
     {
         $command = sprintf(
             '%s -i | grep -- %s',
@@ -315,10 +291,7 @@ class RoboFile extends \Robo\Tasks
         return (new Process($command))->run() === 0;
     }
 
-    /**
-     * @return string
-     */
-    protected function getLogDir()
+    protected function getLogDir(): string
     {
         $this->initCodeceptionInfo();
 

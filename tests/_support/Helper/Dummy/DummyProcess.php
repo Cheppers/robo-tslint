@@ -2,7 +2,9 @@
 
 namespace Sweetchuck\Robo\TsLint\Test\Helper\Dummy;
 
-class DummyProcess extends \Symfony\Component\Process\Process
+use Symfony\Component\Process\Process;
+
+class DummyProcess extends Process
 {
 
     /**

@@ -2,7 +2,9 @@
 
 namespace Sweetchuck\Robo\TsLint\Test\Helper\Dummy;
 
-class DummyOutput extends \Symfony\Component\Console\Output\Output
+use Symfony\Component\Console\Output\Output;
+
+class DummyOutput extends Output
 {
 
     /**

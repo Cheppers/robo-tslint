@@ -18,14 +18,6 @@ use Robo\Task\Filesystem\loadShortcuts as FsShortCuts;
 use Robo\TaskAccessor;
 use Symfony\Component\Process\Process;
 
-/**
- * Class TaskTsLintRun.
- *
- * Assert mapping:
- *   - report: Parsed JSON lint report.
- *
- * @package Sweetchuck\Robo\TsLint\Task
- */
 class TsLintRunTask extends BaseTask implements
     CommandInterface,
     ContainerAwareInterface,
@@ -66,7 +58,7 @@ class TsLintRunTask extends BaseTask implements
      */
     protected $processClass = Process::class;
 
-    //region Options.
+    // region Options.
 
     // region Option - assetNamePrefix.
     /**
@@ -90,7 +82,7 @@ class TsLintRunTask extends BaseTask implements
     }
     // endregion
 
-    //region Option - workingDirectory.
+    // region Option - workingDirectory.
     /**
      * @var string
      */
@@ -112,9 +104,9 @@ class TsLintRunTask extends BaseTask implements
 
         return $this;
     }
-    //endregion
+    // endregion
 
-    //region Option - tslintExecutable.
+    // region Option - tslintExecutable.
     /**
      * @var string
      */
@@ -134,9 +126,9 @@ class TsLintRunTask extends BaseTask implements
 
         return $this;
     }
-    //endregion
+    // endregion
 
-    //region Option - failOn.
+    // region Option - failOn.
     /**
      * Severity level.
      *
@@ -163,9 +155,9 @@ class TsLintRunTask extends BaseTask implements
 
         return $this;
     }
-    //endregion
+    // endregion
 
-    //region Option - configFile.
+    // region Option - configFile.
     /**
      * @var string
      */
@@ -187,9 +179,9 @@ class TsLintRunTask extends BaseTask implements
 
         return $this;
     }
-    //endregion
+    // endregion
 
-    //region Option - exclude.
+    // region Option - exclude.
     /**
      * A filename or glob which indicates files to exclude from linting.
      *
@@ -218,9 +210,9 @@ class TsLintRunTask extends BaseTask implements
 
         return $this;
     }
-    //endregion
+    // endregion
 
-    //region Option - force.
+    // region Option - force.
     /**
      * Return status code 0 even if there are any lint errors.
      *
@@ -242,9 +234,9 @@ class TsLintRunTask extends BaseTask implements
 
         return $this;
     }
-    //endregion
+    // endregion
 
-    //region Option - out.
+    // region Option - out.
     /**
      * A filename to output the results to.
      *
@@ -271,9 +263,9 @@ class TsLintRunTask extends BaseTask implements
 
         return $this;
     }
-    //endregion
+    // endregion
 
-    //region Option - rulesDir.
+    // region Option - rulesDir.
     /**
      * @var string
      */
@@ -295,9 +287,9 @@ class TsLintRunTask extends BaseTask implements
 
         return $this;
     }
-    //endregion
+    // endregion
 
-    //region Option - formattersDir.
+    // region Option - formattersDir.
     /**
      * An additional formatters directory, for user-created formatters.
      *
@@ -319,9 +311,9 @@ class TsLintRunTask extends BaseTask implements
 
         return $this;
     }
-    //endregion
+    // endregion
 
-    //region Option - format.
+    // region Option - format.
     /**
      * @var string
      */
@@ -343,9 +335,9 @@ class TsLintRunTask extends BaseTask implements
 
         return $this;
     }
-    //endregion
+    // endregion
 
-    //region Option - project.
+    // region Option - project.
     /**
      * @var string
      */
@@ -367,9 +359,9 @@ class TsLintRunTask extends BaseTask implements
 
         return $this;
     }
-    //endregion
+    // endregion
 
-    //region Option - typeCheck.
+    // region Option - typeCheck.
     /**
      * @var bool
      */
@@ -393,9 +385,9 @@ class TsLintRunTask extends BaseTask implements
 
         return $this;
     }
-    //endregion
+    // endregion
 
-    //region Option - paths.
+    // region Option - paths.
     /**
      * @var array
      */
@@ -422,9 +414,9 @@ class TsLintRunTask extends BaseTask implements
 
         return $this;
     }
-    //endregion
+    // endregion
 
-    //region Option - lintReporters.
+    // region Option - lintReporters.
     /**
      * @var string[]|\Sweetchuck\LintReport\ReporterInterface[]
      */
@@ -439,8 +431,6 @@ class TsLintRunTask extends BaseTask implements
     }
 
     /**
-     * @param array $lintReporters
-     *
      * @return $this
      */
     public function setLintReporters(array $lintReporters)
@@ -456,7 +446,7 @@ class TsLintRunTask extends BaseTask implements
      *
      * @return $this
      */
-    public function addLintReporter($id, $lintReporter = null)
+    public function addLintReporter(string $id, $lintReporter = null)
     {
         $this->lintReporters[$id] = $lintReporter;
 
@@ -472,8 +462,8 @@ class TsLintRunTask extends BaseTask implements
 
         return $this;
     }
-    //endregion
-    //endregion
+    // endregion
+    // endregion
 
     /**
      * @var array
@@ -612,7 +602,7 @@ class TsLintRunTask extends BaseTask implements
      * @return bool[]
      *   Key is the relevant value, the value is a boolean.
      */
-    protected function createIncludeList($items, $include): array
+    protected function createIncludeList($items, bool $include): array
     {
         if (!is_array($items)) {
             $items = [$items => $include];
