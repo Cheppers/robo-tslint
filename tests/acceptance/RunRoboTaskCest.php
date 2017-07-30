@@ -2,7 +2,7 @@
 
 namespace Sweetchuck\Robo\TsLint\Tests\Acceptance;
 
-use AcceptanceTester;
+use Sweetchuck\Robo\TsLint\Test\AcceptanceTester;
 
 class RunRoboTaskCest
 {

@@ -2,15 +2,14 @@
 
 namespace Sweetchuck\Robo\TsLint\Tests\Unit\Task;
 
-use Sweetchuck\AssetJar\AssetJar;
-use Sweetchuck\Robo\TsLint\Task\Run as RunTask;
 use Codeception\Test\Unit;
 use Codeception\Util\Stub;
-use Helper\Dummy\Output as DummyOutput;
-use Helper\Dummy\Process as DummyProcess;
 use Robo\Robo;
+use Sweetchuck\Robo\TsLint\Task\TsLintRunTask as RunTask;
+use Sweetchuck\Robo\TsLint\Test\Helper\Dummy\DummyOutput;
+use Sweetchuck\Robo\TsLint\Test\Helper\Dummy\DummyProcess;
 
-class RunTest extends Unit
+class TsLintRunTaskTest extends Unit
 {
     protected static function getMethod(string $name): \ReflectionMethod
     {
@@ -22,7 +21,7 @@ class RunTest extends Unit
     }
 
     /**
-     * @var \UnitTester
+     * @var \Sweetchuck\Robo\TsLint\Test\UnitTester
      */
     protected $tester;
 
@@ -353,7 +352,7 @@ class RunTest extends Unit
             ],
         ];
 
-        $label_pattern = '%d; failOn: %s; E: %d; W: %d; exitCode: %d; withJar: %s;';
+        $labelPattern = '%d; failOn: %s; E: %d; W: %d; exitCode: %d;';
         $cases = [];
 
         $combinations = [
@@ -374,30 +373,26 @@ class RunTest extends Unit
         ];
 
         $i = 0;
-        foreach ([true, false] as $withJar) {
-            $withJarStr = $withJar ? 'true' : 'false';
-            foreach ($combinations as $c) {
-                $i++;
-                $report = $reportBase;
+        foreach ($combinations as $c) {
+            $i++;
+            $report = $reportBase;
 
-                if ($c['e']) {
-                    $report[] = $failureError;
-                }
-
-                if ($c['w']) {
-                    $report[] = $failureWarning;
-                }
-
-                $label = sprintf($label_pattern, $i, $c['f'], $c['e'], $c['w'], $c['c'], $withJarStr);
-                $cases[$label] = [
-                    $c['c'],
-                    [
-                        'failOn' => $c['f'],
-                    ],
-                    $withJar,
-                    json_encode($report)
-                ];
+            if ($c['e']) {
+                $report[] = $failureError;
             }
+
+            if ($c['w']) {
+                $report[] = $failureWarning;
+            }
+
+            $label = sprintf($labelPattern, $i, $c['f'], $c['e'], $c['w'], $c['c']);
+            $cases[$label] = [
+                $c['c'],
+                [
+                    'failOn' => $c['f'],
+                ],
+                json_encode($report)
+            ];
         }
 
         return $cases;
@@ -411,7 +406,6 @@ class RunTest extends Unit
     public function testRun(
         int $exitCode,
         array $options,
-        bool $withJar,
         string $expectedStdOutput
     ): void {
         $container = Robo::createDefaultContainer();
@@ -421,11 +415,10 @@ class RunTest extends Unit
 
         $options += [
             'workingDirectory' => 'my-working-dir',
-            'assetJarMapping' => ['report' => ['tsLintRun', 'report']],
             'format' => 'json',
         ];
 
-        /** @var \Sweetchuck\Robo\TsLint\Task\Run $task */
+        /** @var \Sweetchuck\Robo\TsLint\Task\TsLintRunTask $task */
         $task = Stub::construct(
             RunTask::class,
             [$options, []],
@@ -444,12 +437,6 @@ class RunTest extends Unit
         $task->setLogger($container->get('logger'));
         $task->setOutput($mainStdOutput);
 
-        $assetJar = null;
-        if ($withJar) {
-            $assetJar = new AssetJar();
-            $task->setAssetJar($assetJar);
-        }
-
         $result = $task->run();
 
         $this->tester->assertEquals(
@@ -458,21 +445,20 @@ class RunTest extends Unit
             'Exit code'
         );
 
-        if ($withJar) {
-            /** @var \Sweetchuck\LintReport\ReportWrapperInterface $reportWrapper */
-            $reportWrapper = $assetJar->getValue(['tsLintRun', 'report']);
-            $this->tester->assertEquals(
-                json_decode($expectedStdOutput, true),
-                $reportWrapper->getReport(),
-                'Output equals with jar'
-            );
-        } else {
-            $this->tester->assertContains(
-                $expectedStdOutput,
-                $mainStdOutput->output,
-                'Output equals without jar'
-            );
-        }
+        $assetNamePrefix = $options['assetNamePrefix'] ?? '';
+        /** @var \Sweetchuck\LintReport\ReportWrapperInterface $reportWrapper */
+        $reportWrapper = $result["{$assetNamePrefix}report"];
+        $this->tester->assertEquals(
+            json_decode($expectedStdOutput, true),
+            $reportWrapper->getReport(),
+            'Output equals with jar'
+        );
+
+        $this->tester->assertContains(
+            $expectedStdOutput,
+            $mainStdOutput->output,
+            'Output equals without jar'
+        );
     }
 
     public function testRunFailed(): void
@@ -490,7 +476,6 @@ class RunTest extends Unit
         $expectedReportJson = json_encode($expectedReport);
         $options = [
             'workingDirectory' => 'my-working-dir',
-            'assetJarMapping' => ['report' => ['tsLintRun', 'report']],
             'failOn' => 'warning',
             'format' => 'json',
         ];
@@ -513,8 +498,6 @@ class RunTest extends Unit
 
         $task->setConfig(Robo::config());
         $task->setLogger($container->get('logger'));
-        $assetJar = new AssetJar();
-        $task->setAssetJar($assetJar);
 
         $result = $task->run();
 
@@ -524,8 +507,9 @@ class RunTest extends Unit
             'Exit code'
         );
 
+        $assetNamePrefix = $options['assetNamePrefix'] ?? '';
         /** @var \Sweetchuck\LintReport\ReportWrapperInterface $reportWrapper */
-        $reportWrapper = $assetJar->getValue(['tsLintRun', 'report']);
+        $reportWrapper = $result["{$assetNamePrefix}report"];
         $this->tester->assertEquals($expectedReport, $reportWrapper->getReport());
     }
 }

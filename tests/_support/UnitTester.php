@@ -1,5 +1,6 @@
 <?php
 
+namespace Sweetchuck\Robo\TsLint\Test;
 
 /**
  * Inherited Methods
@@ -19,8 +20,4 @@
 class UnitTester extends \Codeception\Actor
 {
     use _generated\UnitTesterActions;
-
-   /**
-    * Define custom actions here
-    */
 }

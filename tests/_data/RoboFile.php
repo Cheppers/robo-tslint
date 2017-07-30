@@ -3,13 +3,8 @@
 use Sweetchuck\LintReport\Reporter\BaseReporter;
 use Sweetchuck\LintReport\Reporter\SummaryReporter;
 use Sweetchuck\LintReport\Reporter\VerboseReporter;
-use League\Container\ContainerAwareInterface;
 use League\Container\ContainerInterface;
-use Robo\Contract\ConfigAwareInterface;
 
-/**
- * Class RoboFile.
- */
 // @codingStandardsIgnoreStart
 class RoboFile extends \Robo\Tasks
 {
@@ -22,8 +17,6 @@ class RoboFile extends \Robo\Tasks
     protected $reportsDir = 'actual';
 
     /**
-     * @param \League\Container\ContainerInterface $container
-     *
      * @return $this
      */
     public function setContainer(ContainerInterface $container)
@@ -36,7 +29,7 @@ class RoboFile extends \Robo\Tasks
     }
 
     /**
-     * @return \Sweetchuck\Robo\TsLint\Task\Run
+     * @return \Sweetchuck\Robo\TsLint\Task\TsLintRunTask|\Robo\Collection\CollectionBuilder
      */
     public function lintStylishStdOutput()
     {
@@ -47,7 +40,7 @@ class RoboFile extends \Robo\Tasks
     }
 
     /**
-     * @return \Sweetchuck\Robo\TsLint\Task\Run
+     * @return \Sweetchuck\Robo\TsLint\Task\TsLintRunTask|\Robo\Collection\CollectionBuilder
      */
     public function lintStylishFile()
     {
@@ -59,7 +52,7 @@ class RoboFile extends \Robo\Tasks
     }
 
     /**
-     * @return \Sweetchuck\Robo\TsLint\Task\Run
+     * @return \Sweetchuck\Robo\TsLint\Task\TsLintRunTask|\Robo\Collection\CollectionBuilder
      */
     public function lintAllInOne()
     {
