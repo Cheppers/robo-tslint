@@ -10,7 +10,6 @@
     "prefer-stable": true,
     "require": {
         "php": ">=7.1",
-        "sweetchuck/asset-jar": "^0.0",
         "consolidation/robo": "^1.0"
     },
     "require-dev": {
@@ -29,6 +28,7 @@
     "autoload-dev": {
         "psr-4": {
             "Sweetchuck\\Robo\\TsLint\\Composer\\": "src-dev/Composer/",
+            "Sweetchuck\\Robo\\TsLint\\Test\\": "tests/_support/",
             "Sweetchuck\\Robo\\TsLint\\Tests\\Unit\\": "tests/unit/",
             "Sweetchuck\\Robo\\TsLint\\Tests\\Acceptance\\": "tests/acceptance/"
         }

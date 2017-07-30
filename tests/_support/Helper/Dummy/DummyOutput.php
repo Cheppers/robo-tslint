@@ -1,13 +1,8 @@
 <?php
 
-namespace Helper\Dummy;
+namespace Sweetchuck\Robo\TsLint\Test\Helper\Dummy;
 
-/**
- * Class Output.
- *
- * @package Helper\Dummy
- */
-class Output extends \Symfony\Component\Console\Output\Output
+class DummyOutput extends \Symfony\Component\Console\Output\Output
 {
 
     /**

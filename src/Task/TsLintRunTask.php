@@ -2,8 +2,6 @@
 
 namespace Sweetchuck\Robo\TsLint\Task;
 
-use Sweetchuck\AssetJar\AssetJarAware;
-use Sweetchuck\AssetJar\AssetJarAwareInterface;
 use Sweetchuck\LintReport\ReporterInterface;
 use Sweetchuck\LintReport\ReportWrapperInterface;
 use Sweetchuck\Robo\TsLint\LintReportWrapper\ReportWrapper;
@@ -28,15 +26,13 @@ use Symfony\Component\Process\Process;
  *
  * @package Sweetchuck\Robo\TsLint\Task
  */
-class Run extends BaseTask implements
-    AssetJarAwareInterface,
+class TsLintRunTask extends BaseTask implements
     CommandInterface,
     ContainerAwareInterface,
     BuilderAwareInterface,
     OutputAwareInterface
 {
 
-    use AssetJarAware;
     use ContainerAwareTrait;
     use FsLoadTasks;
     use FsShortCuts;
@@ -71,6 +67,29 @@ class Run extends BaseTask implements
     protected $processClass = Process::class;
 
     //region Options.
+
+    // region Option - assetNamePrefix.
+    /**
+     * @var string
+     */
+    protected $assetNamePrefix = '';
+
+    public function getAssetNamePrefix(): string
+    {
+        return $this->assetNamePrefix;
+    }
+
+    /**
+     * @return $this
+     */
+    public function setAssetNamePrefix(string $value)
+    {
+        $this->assetNamePrefix = $value;
+
+        return $this;
+    }
+    // endregion
+
     //region Option - workingDirectory.
     /**
      * @var string
@@ -456,6 +475,13 @@ class Run extends BaseTask implements
     //endregion
     //endregion
 
+    /**
+     * @var array
+     */
+    protected $assets = [
+        'report' => [],
+    ];
+
     protected $options = [
         'config' => 'value',
         'exclude' => 'multi-value',
@@ -510,8 +536,8 @@ class Run extends BaseTask implements
     {
         foreach ($options as $name => $value) {
             switch ($name) {
-                case 'assetJarMapping':
-                    $this->setAssetJarMapping($value);
+                case 'assetNamePrefix':
+                    $this->setAssetNamePrefix($value);
                     break;
 
                 case 'workingDirectory':
@@ -645,8 +671,8 @@ class Run extends BaseTask implements
                 $numOfErrors = $reportWrapper->numOfErrors();
                 $numOfWarnings = $reportWrapper->numOfWarnings();
 
-                if ($this->isReportHasToBePutBackIntoJar()) {
-                    $this->setAssetJarValue('report', $reportWrapper);
+                if ($this->isLintSuccess()) {
+                    $this->assets['report'] = $reportWrapper;
                 }
 
                 foreach ($lintReporters as $lintReporter) {
@@ -667,9 +693,7 @@ class Run extends BaseTask implements
             $this,
             $exitCode,
             $this->getExitMessage($exitCode) ?: $process->getErrorOutput(),
-            [
-                'time' => $this->getExecutionTime(),
-            ]
+            $this->getAssetsWithPrefixedNames()
         );
     }
 
@@ -741,15 +765,6 @@ class Run extends BaseTask implements
             'project' => $this->getProject(),
             'type-check' => $this->getTypeCheck(),
         ];
-    }
-
-    protected function isReportHasToBePutBackIntoJar(): bool
-    {
-        return (
-            $this->hasAssetJar()
-            && $this->getAssetJarMap('report')
-            && $this->isLintSuccess()
-        );
     }
 
     protected function isOutputFormatMachineReadable(): bool
@@ -870,5 +885,20 @@ class Run extends BaseTask implements
         chdir($currentDir);
 
         return $result;
+    }
+
+    protected function getAssetsWithPrefixedNames(): array
+    {
+        $prefix = $this->getAssetNamePrefix();
+        if (!$prefix) {
+            return $this->assets;
+        }
+
+        $data = [];
+        foreach ($this->assets as $key => $value) {
+            $data["{$prefix}{$key}"] = $value;
+        }
+
+        return $data;
     }
 }

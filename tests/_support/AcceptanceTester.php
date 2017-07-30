@@ -1,6 +1,8 @@
 <?php
 
-use \PHPUnit_Framework_Assert as Assert;
+namespace Sweetchuck\Robo\TsLint\Test;
+
+use \PHPUnit\Framework\Assert as Assert;
 
 /**
  * Inherited Methods
@@ -28,9 +30,11 @@ class AcceptanceTester extends \Codeception\Actor
     {
         $reportsDir = codecept_data_dir('actual');
         if (is_dir($reportsDir)) {
-            $finder = new \Symfony\Component\Finder\Finder();
-            $finder->in($reportsDir);
-            foreach ($finder->files() as $file) {
+            $finder = (new \Symfony\Component\Finder\Finder())
+                ->in($reportsDir)
+                ->files();
+            /** @var \Symfony\Component\Finder\SplFileInfo $file */
+            foreach ($finder as $file) {
                 unlink($file->getPathname());
             }
         }
